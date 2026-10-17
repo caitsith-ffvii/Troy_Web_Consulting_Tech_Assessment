@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using PropertyManagement.Domain.Identity;
 using PropertyManagement.Web.Data;
-using PropertyManagement.Web.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 

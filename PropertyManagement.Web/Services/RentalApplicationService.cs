@@ -69,35 +69,58 @@ public class RentalApplicationService(ApplicationDbContext context)
         string applicantUserId,
         ApplicantInformationSnapshot information)
     {
-        var application = await context.RentalApplications
-            .Include(a => a.ApplicantInformation)
-            .SingleOrDefaultAsync(a => a.Id == applicationId);
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
 
-        if (application is null)
+        if (!result.Succeeded)
         {
-            return ChangeApplicationStatusResult.Failure(
-                "Application not found.");
+            return ChangeApplicationStatusResult.Failure(result.Error!);
         }
 
-        if (application.Applicant.UserId != applicantUserId)
-        {
-            return ChangeApplicationStatusResult.Failure(
-                "You are not authorized to edit this application.");
-        }
+        var application = result.Application!;
 
-        if (application.Status is not (
-            RentalApplicationStatus.Draft or
-            RentalApplicationStatus.Returned))
-        {
-            return ChangeApplicationStatusResult.Failure(
-                "Applicant information can only be edited on draft or returned applications.");
-        }
+        await context.Entry(application)
+            .Reference(a => a.ApplicantInformation)
+            .LoadAsync();
 
         application.ApplicantInformation.FirstName = information.FirstName;
         application.ApplicantInformation.LastName = information.LastName;
         application.ApplicantInformation.PhoneNumber = information.PhoneNumber;
         application.ApplicantInformation.Email = information.Email;
         application.ApplicantInformation.CurrentAddress = information.CurrentAddress;
+        application.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+
+    public async Task<ChangeApplicationStatusResult> AddResidenceHistoryAsync(
+        int applicationId,
+        string applicantUserId,
+        ResidenceHistoryEntry entry)
+    {
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
+
+        if (!result.Succeeded)
+        {
+            return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        var application = result.Application!;
+
+        application.ResidenceHistory.Add(new ResidenceHistoryEntry
+        {
+            Address = entry.Address,
+            LandlordName = entry.LandlordName,
+            LandlordPhoneNumber = entry.LandlordPhoneNumber,
+            MoveInDate = entry.MoveInDate,
+            MoveOutDate = entry.MoveOutDate
+        });
+
         application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
@@ -290,6 +313,37 @@ public class RentalApplicationService(ApplicationDbContext context)
         await transaction.CommitAsync();
 
         return ChangeApplicationStatusResult.Success();
+        }
+
+        
+    private async Task<EditableApplicationResult> GetEditableApplicationAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        var application = await context.RentalApplications
+            .Include(a => a.Applicant)
+            .SingleOrDefaultAsync(a => a.Id == applicationId);
+
+        if (application is null)
+        {
+            return EditableApplicationResult.Failure("Application not found.");
+        }
+
+        if (application.Applicant.UserId != applicantUserId)
+        {
+            return EditableApplicationResult.Failure(
+                "You are not authorized to edit this application.");
+        }
+
+        if (application.Status is not (
+            RentalApplicationStatus.Draft or
+            RentalApplicationStatus.Returned))
+        {
+            return EditableApplicationResult.Failure(
+                "This application can no longer be edited.");
+        }
+
+        return EditableApplicationResult.Success(application);
     }
 }
 
@@ -317,3 +371,18 @@ public sealed record CreateDraftApplicationResult(
     public static CreateDraftApplicationResult Failure(string error) =>
         new(false, null, error);
 }
+
+public sealed record EditableApplicationResult(
+    RentalApplication? Application,
+    string? Error)
+{
+    public bool Succeeded => Application is not null;
+
+    public static EditableApplicationResult Success(
+        RentalApplication application) =>
+        new(application, null);
+
+    public static EditableApplicationResult Failure(string error) =>
+        new(null, error);
+}
+

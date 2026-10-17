@@ -1,3 +1,4 @@
+using System;
 
 namespace PropertyManagement.Domain.Entities;
 
@@ -26,4 +27,42 @@ public class RentalApplication
 
     public ICollection<ApplicationStatusHistory> StatusHistory { get; set; }
         = new List<ApplicationStatusHistory>();
+
+
+    public bool CanTransitionTo(RentalApplicationStatus newStatus)
+    {
+        return Status switch
+        {
+            RentalApplicationStatus.Draft =>
+                newStatus is RentalApplicationStatus.Submitted
+                    or RentalApplicationStatus.Withdrawn,
+
+            RentalApplicationStatus.Submitted =>
+                newStatus is RentalApplicationStatus.Returned
+                    or RentalApplicationStatus.Approved
+                    or RentalApplicationStatus.Denied
+                    or RentalApplicationStatus.Withdrawn,
+
+            RentalApplicationStatus.Returned =>
+                newStatus is RentalApplicationStatus.Submitted
+                    or RentalApplicationStatus.Withdrawn,
+
+            RentalApplicationStatus.Approved
+                or RentalApplicationStatus.Denied
+                or RentalApplicationStatus.Withdrawn => false,
+
+            _ => false
+        };
+    }
+
+    public void TransitionTo(RentalApplicationStatus newStatus)
+    {
+        if (!CanTransitionTo(newStatus))
+        {
+            throw new InvalidOperationException(
+                $"Cannot transition an application from {Status} to {newStatus}.");
+        }
+
+        Status = newStatus;
+    }
 }

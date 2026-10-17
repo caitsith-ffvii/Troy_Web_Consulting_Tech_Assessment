@@ -137,6 +137,8 @@ public class RentalApplicationServiceTests
         context.PropertyManagers.Add(otherManager);
         await context.SaveChangesAsync();
 
+        context.ChangeTracker.Clear();
+
         var service = new RentalApplicationService(context);
 
         // Act

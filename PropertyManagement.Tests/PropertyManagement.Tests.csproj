@@ -20,6 +20,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PropertyManagement.Domain\PropertyManagement.Domain.csproj" />
+    <ProjectReference Include="..\PropertyManagement.Web\PropertyManagement.Web.csproj" />
   </ItemGroup>
-
+  
+  <ItemGroup>
+    <None Update="appsettings.Test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

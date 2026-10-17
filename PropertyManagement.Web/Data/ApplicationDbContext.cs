@@ -15,10 +15,17 @@ public class ApplicationDbContext(
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<Unit> Units => Set<Unit>();
     public DbSet<UnitType> UnitTypes => Set<UnitType>();
+    public DbSet<Lease> Leases => Set<Lease>();
+    public DbSet<RentalApplication> RentalApplications => Set<RentalApplication>();
+    public DbSet<ApplicantInformationSnapshot> ApplicantInformationSnapshots => Set<ApplicantInformationSnapshot>();
+    public DbSet<ResidenceHistoryEntry> ResidenceHistoryEntries => Set<ResidenceHistoryEntry>();
+    public DbSet<ApplicationStatusHistory> ApplicationStatusHistories => Set<ApplicationStatusHistory>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        builder.ApplyConfigurationsFromAssembly(
+            typeof(ApplicationDbContext).Assembly);
     }
 }

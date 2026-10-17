@@ -9,6 +9,132 @@ public class RentalApplicationService(ApplicationDbContext context)
 {
     private const int LeaseTermMonths = 12;
 
+    public async Task<CreateDraftApplicationResult> CreateDraftAsync(
+        string applicantUserId,
+        int unitId)
+    {
+        var applicant = await context.Applicants
+            .Include(a => a.User)
+            .SingleOrDefaultAsync(a => a.UserId == applicantUserId);
+
+        if (applicant is null)
+        {
+            return CreateDraftApplicationResult.Failure(
+                "Applicant profile not found.");
+        }
+
+        var unit = await context.Units
+            .Include(u => u.Property)
+            .SingleOrDefaultAsync(u => u.Id == unitId);
+
+        if (unit is null)
+        {
+            return CreateDraftApplicationResult.Failure(
+                "Unit not found.");
+        }
+
+        if (unit.IsArchived || unit.Property.IsArchived)
+        {
+            return CreateDraftApplicationResult.Failure(
+                "Applications cannot be created for archived units or properties.");
+        }
+
+        var now = DateTime.UtcNow;
+
+        var application = new RentalApplication
+        {
+            ApplicantId = applicant.Id,
+            UnitId = unit.Id,
+            Status = RentalApplicationStatus.Draft,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now,
+            ApplicantInformation = new ApplicantInformationSnapshot
+            {
+                FirstName = applicant.FirstName,
+                LastName = applicant.LastName,
+                PhoneNumber = applicant.PhoneNumber,
+                Email = applicant.User.Email ?? string.Empty,
+                CurrentAddress = applicant.CurrentAddress
+            }
+        };
+
+        context.RentalApplications.Add(application);
+        await context.SaveChangesAsync();
+
+        return CreateDraftApplicationResult.Success(application);
+    }
+
+    public async Task<ChangeApplicationStatusResult> SubmitAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        await using var transaction =
+            await context.Database.BeginTransactionAsync();
+
+        var application = await context.RentalApplications
+            .Include(a => a.Unit)
+            .SingleOrDefaultAsync(a => a.Id == applicationId);
+
+        if (application is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Application not found.");
+        }
+
+        var ownsApplication = await context.RentalApplications
+            .AnyAsync(a =>
+                a.Id == applicationId &&
+                a.Applicant.UserId == applicantUserId);
+
+        if (!ownsApplication)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "You are not authorized to submit this application.");
+        }
+
+        if (!application.CanTransitionTo(RentalApplicationStatus.Submitted))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                $"Cannot submit an application from {application.Status}.");
+        }
+
+        var today = DateTime.UtcNow.Date;
+
+        var hasActiveLease = await context.Leases
+            .AnyAsync(l =>
+                l.UnitId == application.UnitId &&
+                l.StartDate <= today &&
+                l.EndDate >= today);
+
+        if (hasActiveLease)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "This unit already has an active lease.");
+        }
+
+        var now = DateTime.UtcNow;
+        var previousStatus = application.Status;
+
+        application.TransitionTo(RentalApplicationStatus.Submitted);
+        application.UpdatedAtUtc = now;
+
+        context.ApplicationStatusHistories.Add(new ApplicationStatusHistory
+        {
+            RentalApplicationId = application.Id,
+            ChangedByUserId = applicantUserId,
+            ChangedAtUtc = now,
+            PreviousStatus = previousStatus,
+            NewStatus = RentalApplicationStatus.Submitted,
+            Comment = null
+        });
+
+        await context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+
+
     public async Task<ChangeApplicationStatusResult> ChangeStatusAsync(
         int applicationId,
         string changedByUserId,
@@ -134,4 +260,18 @@ public sealed record ChangeApplicationStatusResult(
 
     public static ChangeApplicationStatusResult Failure(string error) =>
         new(false, error);
+}
+
+
+public sealed record CreateDraftApplicationResult(
+    bool Succeeded,
+    RentalApplication? Application,
+    string? Error)
+{
+    public static CreateDraftApplicationResult Success(
+        RentalApplication application) =>
+        new(true, application, null);
+
+    public static CreateDraftApplicationResult Failure(string error) =>
+        new(false, null, error);
 }

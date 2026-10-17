@@ -596,4 +596,265 @@ public class RentalApplicationServiceTests
             applications,
             application => application.Status == RentalApplicationStatus.Submitted);
     }
+    
+    [Fact]
+    public async Task CreateDraftAsync_ApplicantCreatesApplication_CreatesDraftWithInformationSnapshot()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.CreateDraftAsync(
+            scenario.ApplicantUser.Id,
+            scenario.Unit.Id);
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.NotNull(result.Application);
+
+        var application = await context.RentalApplications
+            .Include(a => a.ApplicantInformation)
+            .SingleAsync(a => a.Id == result.Application.Id);
+
+        Assert.Equal(scenario.Applicant.Id, application.ApplicantId);
+        Assert.Equal(scenario.Unit.Id, application.UnitId);
+        Assert.Equal(RentalApplicationStatus.Draft, application.Status);
+
+        Assert.Equal(
+            scenario.Applicant.FirstName,
+            application.ApplicantInformation.FirstName);
+
+        Assert.Equal(
+            scenario.Applicant.LastName,
+            application.ApplicantInformation.LastName);
+
+        Assert.Equal(
+            scenario.Applicant.PhoneNumber,
+            application.ApplicantInformation.PhoneNumber);
+
+        Assert.Equal(
+            scenario.ApplicantUser.Email,
+            application.ApplicantInformation.Email);
+
+        Assert.Equal(
+            scenario.Applicant.CurrentAddress,
+            application.ApplicantInformation.CurrentAddress);
+
+        Assert.True(application.CreatedAtUtc > DateTime.MinValue);
+        Assert.Equal(application.CreatedAtUtc, application.UpdatedAtUtc);
+    }
+    
+    [Fact]
+    public async Task CreateDraftAsync_UserHasNoApplicantProfile_RejectsOperation()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+        var unknownUserId = $"unknown-{Guid.NewGuid():N}";
+
+        // Act
+        var result = await service.CreateDraftAsync(
+            unknownUserId,
+            scenario.Unit.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Application);
+        Assert.NotNull(result.Error);
+
+        Assert.Empty(await context.RentalApplications
+            .Where(a => a.ApplicantId == scenario.Applicant.Id)
+            .Where(a => a.UnitId == scenario.Unit.Id)
+            .Where(a => a.Status == RentalApplicationStatus.Draft)
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_UnitDoesNotExist_RejectsOperation()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+        const int nonexistentUnitId = int.MaxValue;
+
+        // Act
+        var result = await service.CreateDraftAsync(
+            scenario.ApplicantUser.Id,
+            nonexistentUnitId);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Null(result.Application);
+        Assert.NotNull(result.Error);
+
+        Assert.Empty(await context.RentalApplications
+            .Where(a => a.ApplicantId == scenario.Applicant.Id)
+            .Where(a => a.UnitId == nonexistentUnitId)
+            .ToListAsync());
+    }
+    
+    [Fact]
+    public async Task SubmitAsync_UnitHasActiveLease_RejectsSubmissionWithoutChanges()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var today = DateTime.UtcNow.Date;
+
+        context.Leases.Add(new Lease
+        {
+            UnitId = scenario.Unit.Id,
+            ApplicantId = scenario.Applicant.Id,
+            StartDate = today.AddMonths(-1),
+            EndDate = today.AddMonths(11),
+            AgreedRent = scenario.Unit.MonthlyRent
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Error);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Draft,
+            unchangedApplication.Status);
+
+        Assert.Empty(await context.ApplicationStatusHistories
+            .Where(h => h.RentalApplicationId == scenario.Application.Id)
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task SubmitAsync_ValidDraft_SubmitsApplicationAndRecordsHistory()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.True(result.Succeeded);
+
+        var history = await context.ApplicationStatusHistories
+            .SingleAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id);
+
+        Assert.Equal(RentalApplicationStatus.Draft, history.PreviousStatus);
+        Assert.Equal(RentalApplicationStatus.Submitted, history.NewStatus);
+        Assert.Equal(scenario.ApplicantUser.Id, history.ChangedByUserId);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            scenario.Application.Status);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_AnotherApplicant_SubmissionIsRejected()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString());
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            scenario.Application.Status);
+
+        Assert.Empty(await context.ApplicationStatusHistories
+            .Where(h => h.RentalApplicationId == scenario.Application.Id)
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task SubmitAsync_ApprovedApplication_SubmissionIsRejected()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Approved;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            RentalApplicationStatus.Approved,
+            scenario.Application.Status);
+
+        Assert.Empty(await context.ApplicationStatusHistories
+            .Where(h => h.RentalApplicationId == scenario.Application.Id)
+            .ToListAsync());
+    }
 }

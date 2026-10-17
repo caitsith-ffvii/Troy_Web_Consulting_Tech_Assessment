@@ -387,4 +387,125 @@ public class RentalApplicationServiceTests
                 h.RentalApplicationId == scenario.Application.Id)
             .ToListAsync());
     }
+
+    [Fact]
+    public async Task ChangeStatusAsync_ManagerApprovesApplication_CreatesLeaseAndRecordsHistory()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+        await using var transaction =
+            await context.Database.BeginTransactionAsync();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Approved,
+            null);
+
+        // Assert
+        Assert.True(result.Succeeded);
+
+        var approvedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Approved,
+            approvedApplication.Status);
+
+        var lease = await context.Leases
+            .SingleAsync(l => l.UnitId == scenario.Unit.Id);
+
+        Assert.Equal(scenario.Applicant.Id, lease.ApplicantId);
+        Assert.Equal(scenario.Unit.Id, lease.UnitId);
+        Assert.Equal(scenario.Unit.MonthlyRent, lease.AgreedRent);
+        Assert.Equal(DateTime.UtcNow.Date, lease.StartDate.Date);
+        Assert.Equal(
+            lease.StartDate.Date.AddMonths(12),
+            lease.EndDate.Date);
+
+        var history = await context.ApplicationStatusHistories
+            .SingleAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            history.PreviousStatus);
+        Assert.Equal(
+            RentalApplicationStatus.Approved,
+            history.NewStatus);
+        Assert.Equal(scenario.ManagerUser.Id, history.ChangedByUserId);
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_UnitHasActiveLease_RejectsApprovalWithoutChanges()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+        await using var transaction =
+            await context.Database.BeginTransactionAsync();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var today = DateTime.UtcNow.Date;
+
+        context.Leases.Add(new Lease
+        {
+            UnitId = scenario.Unit.Id,
+            ApplicantId = scenario.Applicant.Id,
+            StartDate = today.AddMonths(-1),
+            EndDate = today.AddMonths(11),
+            AgreedRent = scenario.Unit.MonthlyRent
+        });
+
+        await context.SaveChangesAsync();
+
+        var originalUpdatedAt = scenario.Application.UpdatedAtUtc;
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Approved,
+            null);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Error);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            unchangedApplication.Status);
+
+        Assert.Equal(
+            originalUpdatedAt,
+            unchangedApplication.UpdatedAtUtc);
+
+        var leases = await context.Leases
+            .Where(l => l.UnitId == scenario.Unit.Id)
+            .ToListAsync();
+
+        Assert.Single(leases);
+
+        Assert.Empty(await context.ApplicationStatusHistories
+            .Where(h =>
+                h.RentalApplicationId == scenario.Application.Id)
+            .ToListAsync());
+    }
 }

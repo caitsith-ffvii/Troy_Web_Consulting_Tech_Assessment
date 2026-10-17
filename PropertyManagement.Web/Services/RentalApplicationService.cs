@@ -7,6 +7,8 @@ namespace PropertyManagement.Web.Services;
 
 public class RentalApplicationService(ApplicationDbContext context)
 {
+    private const int LeaseTermMonths = 12;
+
     public async Task<ChangeApplicationStatusResult> ChangeStatusAsync(
         int applicationId,
         string changedByUserId,
@@ -48,6 +50,34 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         var now = DateTime.UtcNow;
+
+        if (newStatus == RentalApplicationStatus.Approved)
+        {
+            var leaseStartDate = now.Date;
+            var leaseEndDate = leaseStartDate.AddMonths(LeaseTermMonths);
+
+            var hasOverlappingLease = await context.Leases
+                .AnyAsync(l =>
+                    l.UnitId == application.UnitId &&
+                    l.StartDate <= leaseEndDate &&
+                    l.EndDate >= leaseStartDate);
+
+            if (hasOverlappingLease)
+            {
+                return ChangeApplicationStatusResult.Failure(
+                    "This unit already has a lease that overlaps the proposed lease period.");
+            }
+
+            context.Leases.Add(new Lease
+            {
+                UnitId = application.UnitId,
+                ApplicantId = application.ApplicantId,
+                StartDate = leaseStartDate,
+                EndDate = leaseEndDate,
+                AgreedRent = application.Unit.MonthlyRent
+            });
+        }
+
         var previousStatus = application.Status;
 
         application.TransitionTo(newStatus);

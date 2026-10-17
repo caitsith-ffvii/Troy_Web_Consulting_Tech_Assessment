@@ -201,6 +201,52 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         return ChangeApplicationStatusResult.Success();
     }
+    
+    public async Task<ChangeApplicationStatusResult> CompleteApplicantInformationAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
+
+        if (!result.Succeeded)
+        {
+            return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        var application = result.Application!;
+
+        application.ApplicantInformationCompleted = true;
+        application.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+
+    public async Task<ChangeApplicationStatusResult> CompleteResidenceHistoryAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
+
+        if (!result.Succeeded)
+        {
+            return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        var application = result.Application!;
+
+        application.ResidenceHistoryCompleted = true;
+        application.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
 
     public async Task<ChangeApplicationStatusResult> SubmitAsync(
         int applicationId,

@@ -1396,4 +1396,151 @@ public class RentalApplicationServiceTests
         Assert.False(result.Succeeded);
     }
 
+    [Fact]
+    public async Task CompleteApplicantInformationAsync_OwnDraft_MarksSectionComplete()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.True(result.Succeeded);
+        Assert.True(scenario.Application.ApplicantInformationCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteApplicantInformationAsync_DifferentApplicant_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteApplicantInformationAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString());
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ApplicantInformationCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteApplicantInformationAsync_SubmittedApplication_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.ApplicantInformationCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ApplicantInformationCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteResidenceHistoryAsync_OwnDraft_MarksSectionComplete()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.True(result.Succeeded);
+        Assert.True(scenario.Application.ResidenceHistoryCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteResidenceHistoryAsync_DifferentApplicant_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteResidenceHistoryAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString());
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ResidenceHistoryCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteResidenceHistoryAsync_SubmittedApplication_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.ResidenceHistoryCompleted = false;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ResidenceHistoryCompleted);
+    }
 }

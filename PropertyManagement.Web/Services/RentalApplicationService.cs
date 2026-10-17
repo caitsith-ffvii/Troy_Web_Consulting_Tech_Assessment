@@ -217,6 +217,22 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         var application = result.Application!;
 
+        await context.Entry(application)
+            .Reference(a => a.ApplicantInformation)
+            .LoadAsync();
+
+        var information = application.ApplicantInformation;
+
+        if (string.IsNullOrWhiteSpace(information.FirstName) ||
+            string.IsNullOrWhiteSpace(information.LastName) ||
+            string.IsNullOrWhiteSpace(information.PhoneNumber) ||
+            string.IsNullOrWhiteSpace(information.Email) ||
+            string.IsNullOrWhiteSpace(information.CurrentAddress))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "All applicant information fields are required.");
+        }
+
         application.ApplicantInformationCompleted = true;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -239,6 +255,22 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         var application = result.Application!;
+
+        var entries = await context.ResidenceHistoryEntries
+            .Where(e => e.RentalApplicationId == applicationId)
+            .ToListAsync();
+
+        var hasInvalidEntry = entries.Any(entry =>
+            string.IsNullOrWhiteSpace(entry.Address) ||
+            string.IsNullOrWhiteSpace(entry.LandlordName) ||
+            string.IsNullOrWhiteSpace(entry.LandlordPhoneNumber) ||
+            entry.MoveOutDate < entry.MoveInDate);
+
+        if (hasInvalidEntry)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Residence history entries contain missing required fields or invalid dates.");
+        }
 
         application.ResidenceHistoryCompleted = true;
         application.UpdatedAtUtc = DateTime.UtcNow;

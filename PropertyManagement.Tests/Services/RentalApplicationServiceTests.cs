@@ -1543,4 +1543,97 @@ public class RentalApplicationServiceTests
         Assert.False(result.Succeeded);
         Assert.False(scenario.Application.ResidenceHistoryCompleted);
     }
+    
+    [Fact]
+    public async Task CompleteApplicantInformationAsync_MissingRequiredField_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
+
+        await context.Entry(scenario.Application)
+            .Reference(a => a.ApplicantInformation)
+            .LoadAsync();
+
+        scenario.Application.ApplicantInformation.FirstName = "";
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ApplicantInformationCompleted);
+    }
+
+    [Fact]
+    public async Task CompleteResidenceHistoryAsync_MoveOutBeforeMoveIn_RejectsCompletion()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = false;
+
+        scenario.Application.ResidenceHistory.Add(new ResidenceHistoryEntry
+        {
+            Address = "123 Example Street",
+            LandlordName = "Example Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2024, 1, 1),
+            MoveOutDate = new DateTime(2023, 1, 1)
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+        Assert.False(scenario.Application.ResidenceHistoryCompleted);
+    }
+    
+    [Fact]
+    public async Task CompleteResidenceHistoryAsync_NoEntries_MarksSectionComplete()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = false;
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.CompleteResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.True(result.Succeeded);
+        Assert.True(scenario.Application.ResidenceHistoryCompleted);
+    }
 }

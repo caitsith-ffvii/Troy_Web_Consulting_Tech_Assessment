@@ -16,8 +16,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -70,8 +68,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -115,8 +111,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -173,8 +167,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var service = new RentalApplicationService(context);
         const int nonexistentApplicationId = int.MaxValue;
@@ -205,8 +197,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -250,8 +240,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -303,8 +291,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -351,8 +337,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -396,8 +380,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -453,8 +435,6 @@ public class RentalApplicationServiceTests
         await database.InitializeAsync();
 
         await using var context = database.CreateContext();
-        await using var transaction =
-            await context.Database.BeginTransactionAsync();
 
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
@@ -507,5 +487,113 @@ public class RentalApplicationServiceTests
             .Where(h =>
                 h.RentalApplicationId == scenario.Application.Id)
             .ToListAsync());
+    }
+    
+    [Fact]
+    public async Task ChangeStatusAsync_TwoApplicationsApprovedConcurrently_CreatesOnlyOneLease()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        int unitId;
+        int firstApplicationId;
+        int secondApplicationId;
+        string managerUserId;
+
+        await using (var setupContext = database.CreateContext())
+        await using (var transaction =
+            await setupContext.Database.BeginTransactionAsync())
+        {
+            var firstScenario =
+                await SubmittedApplicationScenarioFactory.CreateAsync(setupContext);
+
+            var secondApplicantUser = new ApplicationUser
+            {
+                UserName = $"applicant-{Guid.NewGuid():N}@test.local",
+                Email = $"applicant-{Guid.NewGuid():N}@test.local"
+            };
+
+            var secondApplicant = new Applicant
+            {
+                User = secondApplicantUser,
+                FirstName = "Second",
+                LastName = "Applicant",
+                PhoneNumber = "555-0101",
+                CurrentAddress = "300 Applicant Street"
+            };
+
+            var secondApplication = new RentalApplication
+            {
+                Applicant = secondApplicant,
+                UnitId = firstScenario.Unit.Id,
+                Status = RentalApplicationStatus.Submitted,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow,
+                ApplicantInformation = new ApplicantInformationSnapshot
+                {
+                    FirstName = secondApplicant.FirstName,
+                    LastName = secondApplicant.LastName,
+                    PhoneNumber = secondApplicant.PhoneNumber,
+                    Email = secondApplicantUser.Email!,
+                    CurrentAddress = secondApplicant.CurrentAddress
+                }
+            };
+
+            setupContext.Applicants.Add(secondApplicant);
+            setupContext.RentalApplications.Add(secondApplication);
+
+            await setupContext.SaveChangesAsync();
+
+            unitId = firstScenario.Unit.Id;
+            firstApplicationId = firstScenario.Application.Id;
+            secondApplicationId = secondApplication.Id;
+            managerUserId = firstScenario.ManagerUser.Id;
+
+            await transaction.CommitAsync();
+        }
+
+        // Act
+        async Task<ChangeApplicationStatusResult> ApproveAsync(int applicationId)
+        {
+            await using var context = database.CreateContext();
+            var service = new RentalApplicationService(context);
+
+            return await service.ChangeStatusAsync(
+                applicationId,
+                managerUserId,
+                RentalApplicationStatus.Approved,
+                null);
+        }
+
+        var results = await Task.WhenAll(
+            ApproveAsync(firstApplicationId),
+            ApproveAsync(secondApplicationId));
+
+        // Assert
+        Assert.Single(results, result => result.Succeeded);
+        Assert.Single(results, result => !result.Succeeded);
+
+        await using var assertContext = database.CreateContext();
+
+        var leases = await assertContext.Leases
+            .Where(lease => lease.UnitId == unitId)
+            .ToListAsync();
+
+        Assert.Single(leases);
+
+        var applications = await assertContext.RentalApplications
+            .Where(application =>
+                application.Id == firstApplicationId ||
+                application.Id == secondApplicationId)
+            .ToListAsync();
+
+        Assert.Single(
+            applications,
+            application => application.Status == RentalApplicationStatus.Approved);
+
+        Assert.Single(
+            applications,
+            application => application.Status == RentalApplicationStatus.Submitted);
     }
 }

@@ -15,7 +15,13 @@ public class RentalApplicationService(ApplicationDbContext context)
         RentalApplicationStatus newStatus,
         string? comment)
     {
+        // Approval needs a transaction so the unit lock, lease check,
+        // application update, and lease creation are atomic.
+        await using var transaction =
+            await context.Database.BeginTransactionAsync();
+
         var application = await context.RentalApplications
+            .Include(a => a.Unit)
             .SingleOrDefaultAsync(a => a.Id == applicationId);
 
         if (application is null)
@@ -53,6 +59,23 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         if (newStatus == RentalApplicationStatus.Approved)
         {
+            // Serialize approval attempts targeting the same unit.
+            // SQL Server holds this update lock until the transaction ends.
+            var lockedUnitIds = await context.Units
+                .FromSqlInterpolated($"""
+                    SELECT *
+                    FROM dbo.Units WITH (UPDLOCK, HOLDLOCK)
+                    WHERE Id = {application.UnitId}
+                    """)
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            if (lockedUnitIds.Count == 0)
+            {
+                return ChangeApplicationStatusResult.Failure(
+                    "The unit could not be found.");
+            }
+
             var leaseStartDate = now.Date;
             var leaseEndDate = leaseStartDate.AddMonths(LeaseTermMonths);
 
@@ -96,6 +119,7 @@ public class RentalApplicationService(ApplicationDbContext context)
         });
 
         await context.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return ChangeApplicationStatusResult.Success();
     }

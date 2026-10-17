@@ -128,6 +128,79 @@ public class RentalApplicationService(ApplicationDbContext context)
         return ChangeApplicationStatusResult.Success();
     }
 
+    public async Task<ChangeApplicationStatusResult> UpdateResidenceHistoryAsync(
+        int applicationId,
+        string applicantUserId,
+        int residenceHistoryEntryId,
+        ResidenceHistoryEntry updatedEntry)
+    {
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
+
+        if (!result.Succeeded)
+        {
+            return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        var entry = await context.ResidenceHistoryEntries
+            .SingleOrDefaultAsync(e =>
+                e.Id == residenceHistoryEntryId &&
+                e.RentalApplicationId == applicationId);
+
+        if (entry is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Residence history entry not found.");
+        }
+
+        entry.Address = updatedEntry.Address;
+        entry.LandlordName = updatedEntry.LandlordName;
+        entry.LandlordPhoneNumber = updatedEntry.LandlordPhoneNumber;
+        entry.MoveInDate = updatedEntry.MoveInDate;
+        entry.MoveOutDate = updatedEntry.MoveOutDate;
+
+        var application = result.Application!;
+        application.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+    
+    public async Task<ChangeApplicationStatusResult> RemoveResidenceHistoryAsync(
+        int applicationId,
+        string applicantUserId,
+        int residenceHistoryEntryId)
+    {
+        var result = await GetEditableApplicationAsync(
+            applicationId,
+            applicantUserId);
+
+        if (!result.Succeeded)
+        {
+            return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        var entry = await context.ResidenceHistoryEntries
+            .SingleOrDefaultAsync(e =>
+                e.Id == residenceHistoryEntryId &&
+                e.RentalApplicationId == applicationId);
+
+        if (entry is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Residence history entry not found.");
+        }
+
+        context.ResidenceHistoryEntries.Remove(entry);
+
+        result.Application!.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
 
     public async Task<ChangeApplicationStatusResult> SubmitAsync(
         int applicationId,

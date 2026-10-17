@@ -969,7 +969,7 @@ public class RentalApplicationServiceTests
             originalFirstName,
             scenario.Application.ApplicantInformation.FirstName);
     }
-    
+
     [Fact]
     public async Task AddResidenceHistoryAsync_OwnDraft_AddsEntry()
     {
@@ -1075,6 +1075,270 @@ public class RentalApplicationServiceTests
         Assert.Empty(await context.ResidenceHistoryEntries
             .Where(e => e.RentalApplicationId == scenario.Application.Id)
             .ToListAsync());
+    }
+    
+    [Fact]
+    public async Task UpdateResidenceHistoryAsync_OwnDraft_UpdatesEntry()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Old Street",
+            LandlordName = "Old Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.UpdateResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            entry.Id,
+            new ResidenceHistoryEntry
+            {
+                Address = "456 New Street",
+                LandlordName = "New Landlord",
+                LandlordPhoneNumber = "555-0123",
+                MoveInDate = new DateTime(2023, 1, 1),
+                MoveOutDate = new DateTime(2025, 1, 1)
+            });
+
+        Assert.True(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleAsync(e => e.Id == entry.Id);
+
+        Assert.Equal("456 New Street", savedEntry.Address);
+        Assert.Equal("New Landlord", savedEntry.LandlordName);
+        Assert.Equal("555-0123", savedEntry.LandlordPhoneNumber);
+        Assert.Equal(new DateTime(2023, 1, 1), savedEntry.MoveInDate);
+        Assert.Equal(new DateTime(2025, 1, 1), savedEntry.MoveOutDate);
+    }
+
+    [Fact]
+    public async Task UpdateResidenceHistoryAsync_DifferentApplicant_RejectsUpdate()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Original Street",
+            LandlordName = "Original Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.UpdateResidenceHistoryAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString(),
+            entry.Id,
+            new ResidenceHistoryEntry
+            {
+                Address = "Unauthorized Street",
+                LandlordName = "Unauthorized Landlord",
+                LandlordPhoneNumber = "555-0199",
+                MoveInDate = new DateTime(2023, 1, 1),
+                MoveOutDate = new DateTime(2025, 1, 1)
+            });
+
+        Assert.False(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleAsync(e => e.Id == entry.Id);
+
+        Assert.Equal("123 Original Street", savedEntry.Address);
+    }
+
+    [Fact]
+    public async Task UpdateResidenceHistoryAsync_SubmittedApplication_RejectsUpdate()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Original Street",
+            LandlordName = "Original Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.UpdateResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            entry.Id,
+            new ResidenceHistoryEntry
+            {
+                Address = "Too Late Street",
+                LandlordName = "Different Landlord",
+                LandlordPhoneNumber = "555-0199",
+                MoveInDate = new DateTime(2023, 1, 1),
+                MoveOutDate = new DateTime(2025, 1, 1)
+            });
+
+        Assert.False(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleAsync(e => e.Id == entry.Id);
+
+        Assert.Equal("123 Original Street", savedEntry.Address);
+    }
+
+    [Fact]
+    public async Task RemoveResidenceHistoryAsync_OwnDraft_RemovesEntry()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Old Street",
+            LandlordName = "Old Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.RemoveResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            entry.Id);
+
+        Assert.True(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleOrDefaultAsync(e => e.Id == entry.Id);
+
+        Assert.Null(savedEntry);
+    }
+
+    [Fact]
+    public async Task RemoveResidenceHistoryAsync_DifferentApplicant_RejectsRemoval()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Original Street",
+            LandlordName = "Original Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.RemoveResidenceHistoryAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString(),
+            entry.Id);
+
+        Assert.False(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleOrDefaultAsync(e => e.Id == entry.Id);
+
+        Assert.NotNull(savedEntry);
+    }
+
+    [Fact]
+    public async Task RemoveResidenceHistoryAsync_SubmittedApplication_RejectsRemoval()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var entry = new ResidenceHistoryEntry
+        {
+            Address = "123 Original Street",
+            LandlordName = "Original Landlord",
+            LandlordPhoneNumber = "555-0100",
+            MoveInDate = new DateTime(2022, 1, 1),
+            MoveOutDate = new DateTime(2024, 1, 1)
+        };
+
+        scenario.Application.ResidenceHistory.Add(entry);
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.RemoveResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            entry.Id);
+
+        Assert.False(result.Succeeded);
+
+        var savedEntry = await context.ResidenceHistoryEntries
+            .SingleOrDefaultAsync(e => e.Id == entry.Id);
+
+        Assert.NotNull(savedEntry);
     }
 
 }

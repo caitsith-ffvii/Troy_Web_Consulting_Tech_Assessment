@@ -12,6 +12,9 @@ public class ApplicationDbContext(
 {
     public DbSet<Applicant> Applicants => Set<Applicant>();
     public DbSet<PropertyManager> PropertyManagers => Set<PropertyManager>();
+    public DbSet<Property> Properties => Set<Property>();
+    public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<UnitType> UnitTypes => Set<UnitType>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -195,6 +195,37 @@ namespace PropertyManagement.Web.Migrations
                     b.ToTable("Applicants");
                 });
 
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("PropertyManagerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PropertyManagerId");
+
+                    b.ToTable("Properties");
+                });
+
             modelBuilder.Entity("PropertyManagement.Domain.Entities.PropertyManager", b =>
                 {
                     b.Property<int>("Id")
@@ -213,6 +244,66 @@ namespace PropertyManagement.Web.Migrations
                         .IsUnique();
 
                     b.ToTable("PropertyManagers");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.Unit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MonthlyRent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UnitNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("UnitTypeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnitTypeId");
+
+                    b.HasIndex("PropertyId", "UnitNumber")
+                        .IsUnique();
+
+                    b.ToTable("Units");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.UnitType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("UnitTypes");
                 });
 
             modelBuilder.Entity("PropertyManagement.Domain.Identity.ApplicationUser", b =>
@@ -342,6 +433,17 @@ namespace PropertyManagement.Web.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>
+                {
+                    b.HasOne("PropertyManagement.Domain.Entities.PropertyManager", "PropertyManager")
+                        .WithMany()
+                        .HasForeignKey("PropertyManagerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("PropertyManager");
+                });
+
             modelBuilder.Entity("PropertyManagement.Domain.Entities.PropertyManager", b =>
                 {
                     b.HasOne("PropertyManagement.Domain.Identity.ApplicationUser", "User")
@@ -351,6 +453,35 @@ namespace PropertyManagement.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.Unit", b =>
+                {
+                    b.HasOne("PropertyManagement.Domain.Entities.Property", "Property")
+                        .WithMany("Units")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManagement.Domain.Entities.UnitType", "UnitType")
+                        .WithMany("Units")
+                        .HasForeignKey("UnitTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Property");
+
+                    b.Navigation("UnitType");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>
+                {
+                    b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.UnitType", b =>
+                {
+                    b.Navigation("Units");
                 });
 #pragma warning restore 612, 618
         }

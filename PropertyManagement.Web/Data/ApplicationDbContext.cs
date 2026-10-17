@@ -11,6 +11,7 @@ public class ApplicationDbContext(
     : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Applicant> Applicants => Set<Applicant>();
+    public DbSet<PropertyManager> PropertyManagers => Set<PropertyManager>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

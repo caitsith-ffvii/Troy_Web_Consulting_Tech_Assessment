@@ -195,6 +195,26 @@ namespace PropertyManagement.Web.Migrations
                     b.ToTable("Applicants");
                 });
 
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.PropertyManager", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("PropertyManagers");
+                });
+
             modelBuilder.Entity("PropertyManagement.Domain.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -316,6 +336,17 @@ namespace PropertyManagement.Web.Migrations
                     b.HasOne("PropertyManagement.Domain.Identity.ApplicationUser", "User")
                         .WithOne()
                         .HasForeignKey("PropertyManagement.Domain.Entities.Applicant", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.PropertyManager", b =>
+                {
+                    b.HasOne("PropertyManagement.Domain.Identity.ApplicationUser", "User")
+                        .WithOne()
+                        .HasForeignKey("PropertyManagement.Domain.Entities.PropertyManager", "UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

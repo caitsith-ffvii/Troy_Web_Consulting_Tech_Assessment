@@ -765,7 +765,7 @@ public class RentalApplicationServiceTests
             .Where(h => h.RentalApplicationId == scenario.Application.Id)
             .ToListAsync());
     }
-
+   
     [Fact]
     public async Task SubmitAsync_ValidDraft_SubmitsApplicationAndRecordsHistory()
     {
@@ -778,6 +778,9 @@ public class RentalApplicationServiceTests
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
         scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = true;
+        scenario.Application.ResidenceHistoryCompleted = true;
+
         await context.SaveChangesAsync();
 
         var service = new RentalApplicationService(context);
@@ -1339,6 +1342,58 @@ public class RentalApplicationServiceTests
             .SingleOrDefaultAsync(e => e.Id == entry.Id);
 
         Assert.NotNull(savedEntry);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_ApplicantInformationIncomplete_RejectsSubmission()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
+        scenario.Application.ResidenceHistoryCompleted = true;
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_ResidenceHistoryIncomplete_RejectsSubmission()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = true;
+        scenario.Application.ResidenceHistoryCompleted = false;
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        Assert.False(result.Succeeded);
     }
 
 }

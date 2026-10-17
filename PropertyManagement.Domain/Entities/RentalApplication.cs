@@ -28,6 +28,9 @@ public class RentalApplication
     public ICollection<ApplicationStatusHistory> StatusHistory { get; set; }
         = new List<ApplicationStatusHistory>();
 
+    public bool ApplicantInformationCompleted { get; set; }
+
+    public bool ResidenceHistoryCompleted { get; set; }
 
     public bool CanTransitionTo(RentalApplicationStatus newStatus)
     {

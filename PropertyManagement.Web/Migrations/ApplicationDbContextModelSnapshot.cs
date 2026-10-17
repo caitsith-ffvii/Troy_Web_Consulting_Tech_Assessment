@@ -372,8 +372,14 @@ namespace PropertyManagement.Web.Migrations
                     b.Property<int>("ApplicantId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ApplicantInformationCompleted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("ResidenceHistoryCompleted")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

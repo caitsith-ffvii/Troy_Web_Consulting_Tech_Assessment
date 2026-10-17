@@ -230,6 +230,13 @@ public class RentalApplicationService(ApplicationDbContext context)
                 "You are not authorized to submit this application.");
         }
 
+        if (!application.ApplicantInformationCompleted ||
+            !application.ResidenceHistoryCompleted)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Both application sections must be completed before submission.");
+        }
+
         if (!application.CanTransitionTo(RentalApplicationStatus.Submitted))
         {
             return ChangeApplicationStatusResult.Failure(

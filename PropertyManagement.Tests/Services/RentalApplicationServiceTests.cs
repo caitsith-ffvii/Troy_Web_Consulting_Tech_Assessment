@@ -857,4 +857,117 @@ public class RentalApplicationServiceTests
             .Where(h => h.RentalApplicationId == scenario.Application.Id)
             .ToListAsync());
     }
+    
+    [Fact]
+    public async Task SaveApplicantInformationAsync_OwnDraft_UpdatesInformation()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SaveApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            new ApplicantInformationSnapshot
+            {
+                FirstName = "Updated",
+                LastName = "Applicant",
+                PhoneNumber = "555-0100",
+                Email = "updated@example.com",
+                CurrentAddress = "123 New Street"
+            });
+
+        Assert.True(result.Succeeded);
+
+        var savedInformation = await context.ApplicantInformationSnapshots
+            .SingleAsync(i =>
+                i.RentalApplicationId == scenario.Application.Id);
+
+        Assert.Equal("Updated", savedInformation.FirstName);
+        Assert.Equal("Applicant", savedInformation.LastName);
+        Assert.Equal("555-0100", savedInformation.PhoneNumber);
+        Assert.Equal("updated@example.com", savedInformation.Email);
+        Assert.Equal("123 New Street", savedInformation.CurrentAddress);
+    }
+
+    [Fact]
+    public async Task SaveApplicantInformationAsync_DifferentApplicant_RejectsUpdate()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var originalFirstName =
+            scenario.Application.ApplicantInformation.FirstName;
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SaveApplicantInformationAsync(
+            scenario.Application.Id,
+            Guid.NewGuid().ToString(),
+            new ApplicantInformationSnapshot
+            {
+                FirstName = "Unauthorized",
+                LastName = "Change",
+                PhoneNumber = "555-0199",
+                Email = "unauthorized@example.com",
+                CurrentAddress = "999 Unknown Street"
+            });
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            originalFirstName,
+            scenario.Application.ApplicantInformation.FirstName);
+    }
+
+    [Fact]
+    public async Task SaveApplicantInformationAsync_SubmittedApplication_RejectsUpdate()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var originalFirstName =
+            scenario.Application.ApplicantInformation.FirstName;
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SaveApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            new ApplicantInformationSnapshot
+            {
+                FirstName = "Too Late",
+                LastName = "Change",
+                PhoneNumber = "555-0199",
+                Email = "late@example.com",
+                CurrentAddress = "999 Unknown Street"
+            });
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(
+            originalFirstName,
+            scenario.Application.ApplicantInformation.FirstName);
+    }
+
 }

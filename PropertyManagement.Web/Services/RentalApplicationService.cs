@@ -64,6 +64,48 @@ public class RentalApplicationService(ApplicationDbContext context)
         return CreateDraftApplicationResult.Success(application);
     }
 
+    public async Task<ChangeApplicationStatusResult> SaveApplicantInformationAsync(
+        int applicationId,
+        string applicantUserId,
+        ApplicantInformationSnapshot information)
+    {
+        var application = await context.RentalApplications
+            .Include(a => a.ApplicantInformation)
+            .SingleOrDefaultAsync(a => a.Id == applicationId);
+
+        if (application is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Application not found.");
+        }
+
+        if (application.Applicant.UserId != applicantUserId)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "You are not authorized to edit this application.");
+        }
+
+        if (application.Status is not (
+            RentalApplicationStatus.Draft or
+            RentalApplicationStatus.Returned))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Applicant information can only be edited on draft or returned applications.");
+        }
+
+        application.ApplicantInformation.FirstName = information.FirstName;
+        application.ApplicantInformation.LastName = information.LastName;
+        application.ApplicantInformation.PhoneNumber = information.PhoneNumber;
+        application.ApplicantInformation.Email = information.Email;
+        application.ApplicantInformation.CurrentAddress = information.CurrentAddress;
+        application.UpdatedAtUtc = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+
+
     public async Task<ChangeApplicationStatusResult> SubmitAsync(
         int applicationId,
         string applicantUserId)

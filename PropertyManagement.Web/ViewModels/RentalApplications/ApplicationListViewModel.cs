@@ -32,19 +32,8 @@ public class ApplicationListViewModel
     // Parses the status filter; anything unrecognized uses the default.
     public static RentalApplicationStatus? ParseStatus(
         string? status,
-        RentalApplicationStatus? defaultStatus)
-    {
-        if (string.Equals(status, AllStatuses, StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        return Enum.TryParse<RentalApplicationStatus>(status, ignoreCase: true, out var parsed) &&
-               Enum.IsDefined(parsed) &&
-               !int.TryParse(status, out _)
-            ? parsed
-            : defaultStatus;
-    }
+        RentalApplicationStatus? defaultStatus) =>
+        ApplicationStatusFilter.Parse(status, defaultStatus);
 
     public static ApplicationListViewModel Create(
         PagedResult<RentalApplication> result,

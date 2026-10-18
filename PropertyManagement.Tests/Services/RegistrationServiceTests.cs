@@ -214,13 +214,15 @@ public class RegistrationServiceTests
         var context = database.CreateContext();
         var provider = IdentityTestServices.Create(context);
 
-        await new DatabaseInitializer(
-                context,
-                provider.GetRequiredService<RoleManager<IdentityRole>>())
-            .InitializeAsync();
-
         var userManager =
             provider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        // Roles only; demo data is seeded by DatabaseInitializerTests.
+        await new DatabaseInitializer(
+                context,
+                provider.GetRequiredService<RoleManager<IdentityRole>>(),
+                userManager)
+            .EnsureRolesAsync();
 
         return (context, new RegistrationService(context, userManager), userManager);
     }

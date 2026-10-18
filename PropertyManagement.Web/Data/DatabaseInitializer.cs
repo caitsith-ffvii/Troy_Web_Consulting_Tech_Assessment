@@ -1,20 +1,27 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropertyManagement.Domain.Identity;
+using PropertyManagement.Web.Services;
 
 namespace PropertyManagement.Web.Data;
 
 public class DatabaseInitializer(
     ApplicationDbContext context,
-    RoleManager<IdentityRole> roleManager)
+    RoleManager<IdentityRole> roleManager,
+    UserManager<ApplicationUser> userManager)
 {
     public async Task InitializeAsync()
     {
         await context.Database.MigrateAsync();
         await EnsureRolesAsync();
+
+        await new DemoDataSeeder(
+                context,
+                new RegistrationService(context, userManager))
+            .SeedAsync();
     }
 
-    private async Task EnsureRolesAsync()
+    public async Task EnsureRolesAsync()
     {
         foreach (var role in new[] { Roles.Applicant, Roles.PropertyManager })
         {

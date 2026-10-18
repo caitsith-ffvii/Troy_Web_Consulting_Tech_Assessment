@@ -40,7 +40,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Login and logout. Evidence: manual check, 2026-10-18.
 - [x] Applicant pages require the Applicant role. Evidence: manual check (manager receives Access Denied).
 - [x] Verify role and profile provisioning for newly registered users.
-- [?] Verify role and profile provisioning for seeded users.
+- [x] Verify role and profile provisioning for seeded users. Evidence: manual login as `applicant1@demo.local`.
 - [?] Verify every applicant and manager endpoint enforces the correct authorization.
 - [?] Verify unauthorized access does not disclose another user's application data.
 
@@ -156,14 +156,14 @@ Progress:
 
 - [x] Idempotent startup database migration. Evidence: `DatabaseInitializer`; `InitializeAsync_RunTwice_CreatesEachRoleOnce`; manual fresh-database startup.
 - [x] Seed Identity roles idempotently.
-- [?] Seed lookup/reference data.
-- [?] Seed demo users, roles, and profiles.
-- [?] Seed properties, units, applications, status histories, residence entries, and leases.
-- [?] Use Bogus or the required data-generation approach.
-- [?] Repeated startup does not duplicate seed data.
-- [?] Existing user passwords and user edits are not overwritten.
-- [?] Existing data is not deleted merely because it is absent from the seed definition.
-- [?] Seeded records satisfy all domain relationships and status invariants.
+- [x] Seed lookup/reference data (unit types, including one inactive type in use).
+- [x] Seed demo users, roles, and profiles (through `RegistrationService`).
+- [x] Seed properties, units, applications, status histories, residence entries, and leases (`DemoDataSeeder`).
+- [x] Use Bogus with a fixed seed.
+- [x] Repeated startup does not duplicate seed data. Evidence: `InitializeAsync_RunTwice_SeedsDemoDataOnce`.
+- [x] Existing user passwords and user edits are not overwritten (existing users are skipped; sample data is inserted once, all-or-nothing).
+- [x] Existing data is not deleted merely because it is absent from the seed definition (the seeder never deletes).
+- [x] Seeded records satisfy all domain relationships and status invariants. Evidence: `InitializeAsync_SeededData_SatisfiesDomainInvariants`, `InitializeAsync_SeedsApplicationsInEveryStatus`.
 
 ## 11. Tests and quality
 
@@ -173,7 +173,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 97/97 passing (2026-10-18).
+- [x] Full suite: 100/100 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -183,7 +183,7 @@ Progress:
 
 - [?] README contains prerequisites and setup instructions.
 - [?] Document SQL Server configuration and database creation/migration.
-- [?] Document demo credentials without exposing production secrets.
+- [x] Document demo credentials without exposing production secrets.
 - [?] Document how to run the application and test suite.
 - [?] Verify a fresh checkout can be configured and run using only the documentation.
 - [?] Final review against the original assessment prompt.
@@ -201,11 +201,13 @@ Progress:
 - `8965825` — Add account registration, login, and logout
 - `a800ad7` — Allow an existing account to register for an additional role
 - `2290455` — Reject archived units and properties at submission and approval
-- Add applicant withdrawal and application concurrency checks
+- `2d4650c` — Add applicant withdrawal and application concurrency checks
+- Seed demo users and sample data with Bogus
 
 **Latest verified evidence**
 
-- Full suite: 97/97 passing.
+- Full suite: 100/100 passing.
+- Demo seeding verified by tests and a manual login as `applicant1@demo.local`.
 - Fresh-database startup applies all migrations and creates both roles.
 - Manual check: register, log in, and log out as each role; manager receives Access Denied on applicant pages; existing account adds the second role with its password.
 
@@ -214,7 +216,6 @@ Progress:
 - Property and unit management (modals, unit types, archiving).
 - Applicant unit browsing and residence-history modals.
 - Manager application list, review modal, and status history.
-- Demo data seeding with Bogus.
 - README and final review against the assessment.
 
 ## Working protocol

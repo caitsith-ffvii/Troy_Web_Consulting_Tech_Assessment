@@ -1,8 +1,15 @@
 @model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
 
+@using PropertyManagement.Web.ViewModels.RentalApplications
+
 @{
     ViewData["Title"] = $"Rental Application #{Model.ApplicationId}";
 }
+
+@* A plain link, so like Back it never saves the current section. *@
+<p class="mb-2">
+    <a asp-controller="AvailableUnits" asp-action="Index">&larr; Back to available units</a>
+</p>
 
 <h1>Rental Application #@Model.ApplicationId</h1>
 
@@ -24,9 +31,10 @@ else
         <input type="hidden" asp-for="ApplicationId" />
         <input type="hidden" asp-for="Section" />
 
-        <div class="mb-3">
-            <strong>Step:</strong> @Model.Section
-        </div>
+        <p class="text-muted mb-3">
+            Step @Model.Section.StepNumber() of @RentalApplicationSectionExtensions.StepCount:
+            <strong>@Model.Section.DisplayName()</strong>
+        </p>
 
         @switch (Model.Section)
         {

@@ -41,6 +41,37 @@ public class RentalApplicationService(ApplicationDbContext context)
                 "Applications cannot be created for archived units or properties.");
         }
 
+        // Applying again for the same unit resumes the open application
+        // instead of creating a duplicate.
+        var openApplication = await context.RentalApplications
+            .Where(a =>
+                a.ApplicantId == applicant.Id &&
+                a.UnitId == unitId &&
+                (a.Status == RentalApplicationStatus.Draft ||
+                 a.Status == RentalApplicationStatus.Submitted ||
+                 a.Status == RentalApplicationStatus.Returned))
+            .OrderByDescending(a => a.Id)
+            .FirstOrDefaultAsync();
+
+        if (openApplication is not null)
+        {
+            return CreateDraftApplicationResult.Success(openApplication);
+        }
+
+        var today = DateTime.UtcNow.Date;
+
+        var hasActiveLease = await context.Leases
+            .AnyAsync(l =>
+                l.UnitId == unitId &&
+                l.StartDate <= today &&
+                l.EndDate >= today);
+
+        if (hasActiveLease)
+        {
+            return CreateDraftApplicationResult.Failure(
+                "This unit is not currently available.");
+        }
+
         var now = DateTime.UtcNow;
 
         var application = new RentalApplication

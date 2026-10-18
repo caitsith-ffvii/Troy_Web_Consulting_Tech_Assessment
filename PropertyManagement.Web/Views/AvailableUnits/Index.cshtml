@@ -1,0 +1,57 @@
+@model List<AvailableUnitViewModel>
+
+@{
+    ViewData["Title"] = "Available units";
+}
+
+<h1>Available units</h1>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (Model.Count == 0)
+{
+    <p>No units are available right now.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Unit</th>
+                    <th>Type</th>
+                    <th>Bedrooms</th>
+                    <th>Monthly rent</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var unit in Model)
+                {
+                    <tr>
+                        <td>
+                            @unit.PropertyName
+                            <div class="small text-muted">@unit.PropertyAddress</div>
+                        </td>
+                        <td>@unit.UnitNumber</td>
+                        <td>@unit.UnitTypeName</td>
+                        <td>@unit.Bedrooms</td>
+                        <td>@unit.MonthlyRent.ToString("C")</td>
+                        <td class="text-end">
+                            <form asp-controller="Applications"
+                                  asp-action="Create"
+                                  asp-route-unitId="@unit.UnitId"
+                                  method="post">
+                                <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

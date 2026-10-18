@@ -182,6 +182,77 @@ public class UnitServiceTests
     }
 
     [Fact]
+    public async Task GetAvailableUnitsAsync_ExcludesArchivedAndCurrentlyLeasedUnits()
+    {
+        // Arrange
+        var (context, scenario) = await PropertyTestData.CreateWithContextAsync();
+
+        // scenario.Unit has only an expired lease, so it stays available.
+        await PropertyTestData.AddLeaseAsync(context, scenario.Unit);
+
+        var leasedUnit = AddUnit("102");
+        var archivedUnit = AddUnit("103");
+        archivedUnit.IsArchived = true;
+
+        await context.SaveChangesAsync();
+
+        context.Leases.Add(new Domain.Entities.Lease
+        {
+            UnitId = leasedUnit.Id,
+            ApplicantId = (await context.Leases
+                .FirstAsync(l => l.UnitId == scenario.Unit.Id)).ApplicantId,
+            StartDate = DateTime.UtcNow.Date.AddMonths(-1),
+            EndDate = DateTime.UtcNow.Date.AddMonths(11),
+            AgreedRent = leasedUnit.MonthlyRent
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new UnitService(context);
+
+        // Act
+        var units = await service.GetAvailableUnitsAsync();
+
+        // Assert
+        Assert.Contains(units, u => u.Id == scenario.Unit.Id);
+        Assert.DoesNotContain(units, u => u.Id == leasedUnit.Id);
+        Assert.DoesNotContain(units, u => u.Id == archivedUnit.Id);
+
+        Domain.Entities.Unit AddUnit(string unitNumber)
+        {
+            var unit = new Domain.Entities.Unit
+            {
+                PropertyId = scenario.Property.Id,
+                UnitTypeId = scenario.ActiveUnitType.Id,
+                UnitNumber = unitNumber,
+                Bedrooms = 1,
+                MonthlyRent = 1000m
+            };
+
+            context.Units.Add(unit);
+            return unit;
+        }
+    }
+
+    [Fact]
+    public async Task GetAvailableUnitsAsync_ArchivedProperty_ExcludesItsUnits()
+    {
+        // Arrange
+        var (context, scenario) = await PropertyTestData.CreateWithContextAsync();
+
+        scenario.Property.IsArchived = true;
+        await context.SaveChangesAsync();
+
+        var service = new UnitService(context);
+
+        // Act
+        var units = await service.GetAvailableUnitsAsync();
+
+        // Assert
+        Assert.DoesNotContain(units, u => u.Id == scenario.Unit.Id);
+    }
+
+    [Fact]
     public async Task GetSelectableUnitTypesAsync_IncludesCurrentInactiveTypeOnly()
     {
         // Arrange

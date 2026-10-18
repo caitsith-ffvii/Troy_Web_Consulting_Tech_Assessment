@@ -279,8 +279,8 @@ public class ApplicationsController(
 
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.Error!);
-            return BadRequest(ModelState);
+            TempData["Error"] = result.Error;
+            return RedirectToAction("Index", "AvailableUnits");
         }
 
         return RedirectToAction(

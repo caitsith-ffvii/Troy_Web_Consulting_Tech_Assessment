@@ -26,6 +26,29 @@ public class UnitService(ApplicationDbContext context)
             await context.Leases.AnyAsync(l => l.UnitId == unitId);
     }
 
+    // Units applicants can apply for: neither the unit nor its property is
+    // archived, and no lease covers today. Evaluated in the database.
+    public async Task<List<Unit>> GetAvailableUnitsAsync()
+    {
+        var today = DateTime.UtcNow.Date;
+
+        return await context.Units
+            .AsNoTracking()
+            .Include(u => u.Property)
+            .Include(u => u.UnitType)
+            .Where(u =>
+                !u.IsArchived &&
+                !u.Property.IsArchived &&
+                !context.Leases.Any(l =>
+                    l.UnitId == u.Id &&
+                    l.StartDate <= today &&
+                    l.EndDate >= today))
+            .OrderBy(u => u.Property.Name)
+            .ThenBy(u => u.UnitNumber)
+            .ThenBy(u => u.Id)
+            .ToListAsync();
+    }
+
     public async Task<Unit?> FindManagedUnitAsync(
         int unitId,
         string managerUserId)

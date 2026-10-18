@@ -68,7 +68,9 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Submission requires completed application sections.
 - [x] Submission rejects applications in invalid statuses.
 - [x] Submission checks whether the unit has a currently active lease.
-- [?] Verify duplicate draft/application behavior against the original requirements.
+- [x] Applying again for a unit with an open (Draft, Submitted, Returned) application resumes it instead of creating a duplicate. Evidence: `CreateDraftAsync_OpenApplicationForUnitExists_ReturnsExistingApplication`.
+- [x] Drafts cannot be created for units with an active lease. Evidence: `CreateDraftAsync_UnitHasActiveLease_RejectsWithoutCreatingDraft`.
+- [x] Applicants browse available units (not archived, no lease covering today; filtered in SQL) and start an application. Evidence: `GetAvailableUnitsAsync` tests; manual check.
 - [x] Submission rejects archived units and properties.
 - [x] Concurrent submission, withdrawal, and status changes cannot silently overwrite each other (`RentalApplication.RowVersion`). Evidence: `ChangeStatusAsync_ApplicationWithdrawnAfterManagerLoadedIt_RejectsApprovalWithoutLease`.
 
@@ -174,7 +176,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 121/121 passing (2026-10-18).
+- [x] Full suite: 127/127 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -204,11 +206,13 @@ Progress:
 - `2290455` — Reject archived units and properties at submission and approval
 - `2d4650c` — Add applicant withdrawal and application concurrency checks
 - `88f4ce3` — Seed demo users and sample data with Bogus
-- Add property and unit management through modals
+- `5661c95` — Add property and unit management through modals
+- Add applicant unit browsing and resume open applications
 
 **Latest verified evidence**
 
-- Full suite: 121/121 passing.
+- Full suite: 127/127 passing.
+- Manual check: available units list, Apply opens a new draft, applying again resumes it, readable step label, link back to available units.
 - Manual check of property and unit modals: validation re-render, list refresh, delete vs. archive, inactive unit type handling, and assigned-manager-only editing.
 - Demo seeding verified by tests and a manual login as `applicant1@demo.local`.
 - Fresh-database startup applies all migrations and creates both roles.
@@ -216,7 +220,7 @@ Progress:
 
 **Still to confirm**
 
-- Applicant unit browsing and residence-history modals.
+- Residence-history modals.
 - Manager application list, review modal, and status history.
 - README and final review against the assessment.
 

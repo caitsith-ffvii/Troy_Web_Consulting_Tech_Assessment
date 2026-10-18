@@ -597,6 +597,79 @@ public class RentalApplicationServiceTests
             application => application.Status == RentalApplicationStatus.Submitted);
     }
     
+    [Theory]
+    [InlineData(RentalApplicationStatus.Draft)]
+    [InlineData(RentalApplicationStatus.Submitted)]
+    [InlineData(RentalApplicationStatus.Returned)]
+    public async Task CreateDraftAsync_OpenApplicationForUnitExists_ReturnsExistingApplication(
+        RentalApplicationStatus status)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = status;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.CreateDraftAsync(
+            scenario.ApplicantUser.Id,
+            scenario.Unit.Id);
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.Equal(scenario.Application.Id, result.Application!.Id);
+        Assert.Equal(1, await context.RentalApplications
+            .CountAsync(a =>
+                a.ApplicantId == scenario.Applicant.Id &&
+                a.UnitId == scenario.Unit.Id));
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_UnitHasActiveLease_RejectsWithoutCreatingDraft()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Withdrawn;
+
+        context.Leases.Add(new Lease
+        {
+            UnitId = scenario.Unit.Id,
+            ApplicantId = scenario.Applicant.Id,
+            StartDate = DateTime.UtcNow.Date.AddMonths(-1),
+            EndDate = DateTime.UtcNow.Date.AddMonths(11),
+            AgreedRent = scenario.Unit.MonthlyRent
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.CreateDraftAsync(
+            scenario.ApplicantUser.Id,
+            scenario.Unit.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal(1, await context.RentalApplications
+            .CountAsync(a => a.UnitId == scenario.Unit.Id));
+    }
+
     [Fact]
     public async Task CreateDraftAsync_ApplicantCreatesApplication_CreatesDraftWithInformationSnapshot()
     {
@@ -609,6 +682,10 @@ public class RentalApplicationServiceTests
         var scenario =
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
+        // Close the scenario's application so a new draft is created.
+        scenario.Application.Status = RentalApplicationStatus.Withdrawn;
+        await context.SaveChangesAsync();
+
         var service = new RentalApplicationService(context);
 
         // Act
@@ -619,6 +696,7 @@ public class RentalApplicationServiceTests
         // Assert
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Application);
+        Assert.NotEqual(scenario.Application.Id, result.Application.Id);
 
         var application = await context.RentalApplications
             .Include(a => a.ApplicantInformation)

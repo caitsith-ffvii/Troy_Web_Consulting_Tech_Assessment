@@ -286,6 +286,7 @@ public class DemoDataSeeder(
             Status = status,
             CreatedAtUtc = createdAtUtc,
             UpdatedAtUtc = isDraft ? createdAtUtc : reviewedAtUtc,
+            SubmittedAtUtc = isDraft ? null : submittedAtUtc,
             ApplicantInformationCompleted = !isDraft,
             ResidenceHistoryCompleted = !isDraft,
             ApplicantInformation = new ApplicantInformationSnapshot

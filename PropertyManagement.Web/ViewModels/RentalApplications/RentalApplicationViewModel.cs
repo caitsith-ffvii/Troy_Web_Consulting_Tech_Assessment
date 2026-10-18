@@ -15,4 +15,8 @@ public class RentalApplicationViewModel
     public ApplicantInformationViewModel ApplicantInformation { get; set; } = new();
 
     public List<ResidenceHistoryEntryViewModel> ResidenceHistory { get; set; } = [];
+
+    // The manager's comment explaining the current Returned or Denied status.
+    public string? ReviewComment { get; set; }
+    public DateTime? ReviewedAtUtc { get; set; }
 }

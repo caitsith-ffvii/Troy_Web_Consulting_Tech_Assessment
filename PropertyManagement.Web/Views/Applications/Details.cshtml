@@ -8,12 +8,30 @@
 
 @* A plain link, so like Back it never saves the current section. *@
 <p class="mb-2">
-    <a asp-controller="AvailableUnits" asp-action="Index">&larr; Back to available units</a>
+    <a asp-controller="Applications" asp-action="Index">&larr; My applications</a>
 </p>
 
 <h1>Rental Application #@Model.ApplicationId</h1>
 
 <p>Status: <strong>@Model.Status</strong></p>
+
+@if (Model.ReviewComment is not null)
+{
+    var isReturned = Model.Status == PropertyManagement.Domain.Entities.RentalApplicationStatus.Returned;
+
+    @* Shown on every section so the reason stays visible while editing. *@
+    <div class="alert @(isReturned ? "alert-warning" : "alert-danger")" role="alert">
+        <strong>
+            @(isReturned ? "Returned for changes" : "Application denied")
+            on @Model.ReviewedAtUtc?.ToLocalTime().ToString("g"):
+        </strong>
+        <p class="mb-0" style="white-space: pre-line">@Model.ReviewComment</p>
+        @if (isReturned)
+        {
+            <p class="mb-0 mt-2 small">Update your application, then submit it again from the Summary.</p>
+        }
+    </div>
+}
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 

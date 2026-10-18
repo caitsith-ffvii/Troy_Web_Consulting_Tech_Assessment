@@ -390,6 +390,9 @@ namespace PropertyManagement.Web.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("UnitId")
                         .HasColumnType("int");
 
@@ -399,6 +402,8 @@ namespace PropertyManagement.Web.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantId", "Status");
+
+                    b.HasIndex("Status", "SubmittedAtUtc");
 
                     b.HasIndex("UnitId", "Status");
 

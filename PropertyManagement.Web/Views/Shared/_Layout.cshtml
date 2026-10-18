@@ -28,11 +28,17 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="AvailableUnits" asp-action="Index">Available units</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Applications" asp-action="Index">My applications</a>
+                            </li>
                         }
                         @if (User.IsInRole(Roles.PropertyManager))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Properties" asp-action="Index">Properties</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="ManageApplications" asp-action="Index">Applications</a>
                             </li>
                         }
                         <li class="nav-item">

@@ -134,6 +134,71 @@ public class RentalApplicationViewModelFactoryTests
         Assert.Equal(isReadOnly, result.IsReadOnly);
     }
 
+    [Theory]
+    [InlineData(RentalApplicationStatus.Returned)]
+    [InlineData(RentalApplicationStatus.Denied)]
+    public void Create_ReturnedOrDenied_MapsLatestReviewComment(
+        RentalApplicationStatus status)
+    {
+        // Arrange
+        var latest = new DateTime(2026, 3, 2, 0, 0, 0, DateTimeKind.Utc);
+
+        var application = CreateApplication();
+        application.Status = status;
+        application.StatusHistory =
+        [
+            History(status, "Older comment", latest.AddDays(-10)),
+            History(RentalApplicationStatus.Submitted, null, latest.AddDays(-5)),
+            History(status, "Latest comment", latest)
+        ];
+
+        var factory = new RentalApplicationViewModelFactory();
+
+        // Act
+        var result = factory.Create(
+            application,
+            RentalApplicationSection.Summary,
+            isReadOnly: true);
+
+        // Assert
+        Assert.Equal("Latest comment", result.ReviewComment);
+        Assert.Equal(latest, result.ReviewedAtUtc);
+    }
+
+    [Fact]
+    public void Create_ResubmittedAfterReturn_HasNoReviewComment()
+    {
+        // Arrange
+        var application = CreateApplication();
+        application.Status = RentalApplicationStatus.Submitted;
+        application.StatusHistory =
+        [
+            History(RentalApplicationStatus.Returned, "Fix this", DateTime.UtcNow.AddDays(-1))
+        ];
+
+        var factory = new RentalApplicationViewModelFactory();
+
+        // Act
+        var result = factory.Create(
+            application,
+            RentalApplicationSection.Summary,
+            isReadOnly: true);
+
+        // Assert
+        Assert.Null(result.ReviewComment);
+    }
+
+    private static ApplicationStatusHistory History(
+        RentalApplicationStatus newStatus,
+        string? comment,
+        DateTime changedAtUtc) =>
+        new()
+        {
+            NewStatus = newStatus,
+            Comment = comment,
+            ChangedAtUtc = changedAtUtc
+        };
+
     private static RentalApplication CreateApplication()
     {
         return new RentalApplication

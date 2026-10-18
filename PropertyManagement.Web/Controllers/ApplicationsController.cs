@@ -13,9 +13,42 @@ namespace PropertyManagement.Web.Controllers;
 [Authorize(Roles = Roles.Applicant)]
 public class ApplicationsController(
     RentalApplicationService applicationService,
+    ApplicationListService listService,
     RentalApplicationViewModelFactory viewModelFactory)
     : Controller
 {
+    // "My applications": all statuses, most recently submitted first.
+    [HttpGet]
+    public async Task<IActionResult> Index(
+        string? status,
+        int? propertyId,
+        ApplicationSortField sort = ApplicationSortField.Submitted,
+        bool desc = true,
+        int page = 1)
+    {
+        var statusFilter = ApplicationListViewModel.ParseStatus(status, defaultStatus: null);
+
+        if (!Enum.IsDefined(sort))
+        {
+            sort = ApplicationSortField.Submitted;
+        }
+
+        var result = await listService.GetApplicantApplicationsAsync(
+            CurrentUserId,
+            new ApplicationListQuery(statusFilter, propertyId, sort, desc, page));
+
+        return View(ApplicationListViewModel.Create(
+            result,
+            statusFilter,
+            propertyId,
+            sort,
+            desc,
+            await listService.GetApplicantPropertyOptionsAsync(CurrentUserId),
+            showApplicant: false,
+            listController: "Applications",
+            detailsController: "Applications"));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Details(
         int id,

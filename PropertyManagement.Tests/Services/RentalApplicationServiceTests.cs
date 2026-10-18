@@ -880,6 +880,8 @@ public class RentalApplicationServiceTests
         Assert.Equal(
             RentalApplicationStatus.Submitted,
             scenario.Application.Status);
+
+        Assert.NotNull(scenario.Application.SubmittedAtUtc);
     }
 
     [Theory]

@@ -11,6 +11,15 @@ public class RentalApplicationViewModelFactory
     {
         ArgumentNullException.ThrowIfNull(application);
 
+        // Only Returned and Denied carry a comment the applicant needs.
+        var review = application.Status is
+                RentalApplicationStatus.Returned or RentalApplicationStatus.Denied
+            ? application.StatusHistory
+                .Where(h => h.NewStatus == application.Status)
+                .OrderByDescending(h => h.ChangedAtUtc)
+                .FirstOrDefault()
+            : null;
+
         return new RentalApplicationViewModel
         {
             ApplicationId = application.Id,
@@ -19,6 +28,8 @@ public class RentalApplicationViewModelFactory
             ResidenceHistoryCompleted = application.ResidenceHistoryCompleted,
             Section = section,
             IsReadOnly = isReadOnly,
+            ReviewComment = review?.Comment,
+            ReviewedAtUtc = review?.ChangedAtUtc,
 
             ApplicantInformation = new ApplicantInformationViewModel
             {

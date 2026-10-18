@@ -31,6 +31,9 @@ public class RentalApplicationConfiguration
 
         builder.HasIndex(a => new { a.UnitId, a.Status });
 
+        // Supports the default review queue: Submitted, oldest first.
+        builder.HasIndex(a => new { a.Status, a.SubmittedAtUtc });
+
         builder.HasOne(a => a.Applicant)
             .WithMany()
             .HasForeignKey(a => a.ApplicantId)

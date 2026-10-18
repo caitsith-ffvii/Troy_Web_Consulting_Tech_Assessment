@@ -104,6 +104,7 @@ public class RentalApplicationService(ApplicationDbContext context)
         return await context.RentalApplications
             .Include(application => application.ApplicantInformation)
             .Include(application => application.ResidenceHistory)
+            .Include(application => application.StatusHistory)
             .Where(application =>
                 application.Id == applicationId &&
                 application.Applicant.UserId == applicantUserId)
@@ -411,6 +412,10 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         application.TransitionTo(RentalApplicationStatus.Submitted);
         application.UpdatedAtUtc = now;
+
+        // Resubmission resets this, so a returned application rejoins the
+        // review queue at the back.
+        application.SubmittedAtUtc = now;
 
         context.ApplicationStatusHistories.Add(new ApplicationStatusHistory
         {

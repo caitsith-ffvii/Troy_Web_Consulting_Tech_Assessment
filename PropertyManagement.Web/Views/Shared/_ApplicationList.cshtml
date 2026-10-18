@@ -1,0 +1,150 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.ApplicationListViewModel
+@using PropertyManagement.Web.Services
+
+@functions {
+    // Clicking the active column flips direction; a new column starts ascending.
+    object SortRoute(ApplicationSortField field) => new
+    {
+        status = Model.Status,
+        propertyId = Model.PropertyId,
+        sort = field,
+        desc = Model.Sort == field && !Model.Descending,
+        page = 1
+    };
+
+    object PageRoute(int page) => new
+    {
+        status = Model.Status,
+        propertyId = Model.PropertyId,
+        sort = Model.Sort,
+        desc = Model.Descending,
+        page
+    };
+
+    static string StatusBadgeClass(PropertyManagement.Domain.Entities.RentalApplicationStatus status) =>
+        status switch
+        {
+            PropertyManagement.Domain.Entities.RentalApplicationStatus.Submitted => "text-bg-primary",
+            PropertyManagement.Domain.Entities.RentalApplicationStatus.Returned => "text-bg-warning",
+            PropertyManagement.Domain.Entities.RentalApplicationStatus.Approved => "text-bg-success",
+            PropertyManagement.Domain.Entities.RentalApplicationStatus.Denied => "text-bg-danger",
+            _ => "text-bg-secondary"
+        };
+
+    string SortIndicator(ApplicationSortField field) =>
+        Model.Sort != field ? "" : Model.Descending ? " ▼" : " ▲";
+}
+
+<form asp-controller="@Model.ListController" asp-action="Index" method="get"
+      class="row g-2 align-items-end mb-3">
+    <div class="col-sm-4 col-md-3">
+        <label for="status" class="form-label">Status</label>
+        <select id="status" name="status" class="form-select" asp-items="Model.StatusOptions"></select>
+    </div>
+    <div class="col-sm-5 col-md-4">
+        <label for="propertyId" class="form-label">Property</label>
+        <select id="propertyId" name="propertyId" class="form-select" asp-items="Model.PropertyOptions"></select>
+    </div>
+    <input type="hidden" name="sort" value="@Model.Sort" />
+    <input type="hidden" name="desc" value="@Model.Descending.ToString().ToLowerInvariant()" />
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Filter</button>
+    </div>
+</form>
+
+<p class="text-muted small">@Model.TotalCount application(s)</p>
+
+@if (Model.Rows.Count == 0)
+{
+    <p>No applications match these filters.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    @if (Model.ShowApplicant)
+                    {
+                        <th>
+                            <a asp-controller="@Model.ListController" asp-action="Index"
+                               asp-all-route-data="@ToRouteData(SortRoute(ApplicationSortField.Applicant))">Applicant@(SortIndicator(ApplicationSortField.Applicant))</a>
+                        </th>
+                    }
+                    <th>
+                        <a asp-controller="@Model.ListController" asp-action="Index"
+                           asp-all-route-data="@ToRouteData(SortRoute(ApplicationSortField.Property))">Property / Unit@(SortIndicator(ApplicationSortField.Property))</a>
+                    </th>
+                    <th>
+                        <a asp-controller="@Model.ListController" asp-action="Index"
+                           asp-all-route-data="@ToRouteData(SortRoute(ApplicationSortField.Status))">Status@(SortIndicator(ApplicationSortField.Status))</a>
+                    </th>
+                    <th>
+                        <a asp-controller="@Model.ListController" asp-action="Index"
+                           asp-all-route-data="@ToRouteData(SortRoute(ApplicationSortField.Submitted))">Submitted@(SortIndicator(ApplicationSortField.Submitted))</a>
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.Id</td>
+                        @if (Model.ShowApplicant)
+                        {
+                            <td>@row.ApplicantName</td>
+                        }
+                        <td>@row.PropertyName, unit @row.UnitNumber</td>
+                        <td>
+                            @if (row.Status == PropertyManagement.Domain.Entities.RentalApplicationStatus.Returned && !Model.ShowApplicant)
+                            {
+                                @* Applicant view: a returned application needs their action. *@
+                                <span class="badge text-bg-warning">Returned – action needed</span>
+                            }
+                            else
+                            {
+                                <span class="badge @StatusBadgeClass(row.Status)">@row.Status</span>
+                            }
+                        </td>
+                        <td>@(row.SubmittedAtUtc?.ToLocalTime().ToString("g") ?? "—")</td>
+                        <td class="text-end">
+                            <a asp-controller="@Model.DetailsController" asp-action="Details" asp-route-id="@row.Id">Open</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Application pages">
+            <ul class="pagination">
+                <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-controller="@Model.ListController" asp-action="Index"
+                       asp-all-route-data="@ToRouteData(PageRoute(Model.PageNumber - 1))">Previous</a>
+                </li>
+                @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                {
+                    <li class="page-item @(pageNumber == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-controller="@Model.ListController" asp-action="Index"
+                           asp-all-route-data="@ToRouteData(PageRoute(pageNumber))">@pageNumber</a>
+                    </li>
+                }
+                <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-controller="@Model.ListController" asp-action="Index"
+                       asp-all-route-data="@ToRouteData(PageRoute(Model.PageNumber + 1))">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+
+@functions {
+    static Dictionary<string, string> ToRouteData(object values) =>
+        new Microsoft.AspNetCore.Routing.RouteValueDictionary(values)
+            .Where(pair => pair.Value is not null)
+            .ToDictionary(pair => pair.Key, pair => pair.Value!.ToString()!);
+}

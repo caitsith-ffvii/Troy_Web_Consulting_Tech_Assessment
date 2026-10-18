@@ -19,6 +19,9 @@ public class RentalApplication
 
     public DateTime UpdatedAtUtc { get; set; }
 
+    // Most recent submission; null until first submitted.
+    public DateTime? SubmittedAtUtc { get; set; }
+
     public ApplicantInformationSnapshot ApplicantInformation { get; set; }
         = null!;
 

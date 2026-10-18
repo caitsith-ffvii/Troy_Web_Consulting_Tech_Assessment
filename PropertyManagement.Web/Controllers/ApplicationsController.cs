@@ -20,10 +20,15 @@ public class ApplicationsController(
     [HttpGet]
     public IActionResult Index() => View();
 
+    // Marks an application opened from Available Units, so its back link
+    // returns there. The only accepted value, so it can't redirect elsewhere.
+    private const string FromAvailableUnits = "units";
+
     [HttpGet]
     public async Task<IActionResult> Details(
         int id,
-        RentalApplicationSection? section = null)
+        RentalApplicationSection? section = null,
+        string? from = null)
     {
         var applicantUserId = User.FindFirstValue(
             ClaimTypes.NameIdentifier);
@@ -60,7 +65,15 @@ public class ApplicationsController(
 
         var viewModel = viewModelFactory.Create(application, requestedSection, isReadOnly);
 
-        return View(viewModel);
+        return DetailsView(viewModel, from == FromAvailableUnits);
+    }
+
+    private ViewResult DetailsView(
+        RentalApplicationViewModel model,
+        bool fromAvailableUnits)
+    {
+        model.FromAvailableUnits = fromAvailableUnits;
+        return View("Details", model);
     }
 
     [HttpPost]
@@ -68,8 +81,12 @@ public class ApplicationsController(
     public async Task<IActionResult> Navigate(
         int id,
         RentalApplicationViewModel model,
-        string command)
+        string command,
+        string? from = null)
     {
+        var fromUnits = from == FromAvailableUnits;
+        var returnFrom = fromUnits ? FromAvailableUnits : null;
+
         var applicantUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(applicantUserId))
@@ -89,7 +106,7 @@ public class ApplicationsController(
         {
             return RedirectToAction(
                 nameof(Details),
-                new { id });
+                new { id, from = returnFrom });
         }
 
         if (!Enum.IsDefined(model.Section))
@@ -119,14 +136,15 @@ public class ApplicationsController(
                         new
                         {
                             id,
-                            section = RentalApplicationSection.ApplicantInformation
+                            section = RentalApplicationSection.ApplicantInformation,
+                            from = returnFrom
                         });
                 }
 
                 // Back deliberately does not save posted values.
                 return RedirectToAction(
                     nameof(Details),
-                    new { id, section = previousSection });
+                    new { id, section = previousSection, from = returnFrom });
             }
 
             case "Continue":
@@ -147,7 +165,7 @@ public class ApplicationsController(
                             // Preserve the submitted values and MVC field-level errors.
                             invalidModel.ApplicantInformation = model.ApplicantInformation;
 
-                            return View("Details", invalidModel);
+                            return DetailsView(invalidModel, fromUnits);
                         }
 
                         var information = new ApplicantInformationSnapshot
@@ -180,7 +198,7 @@ public class ApplicationsController(
                             failedModel.ApplicantInformation =
                                 model.ApplicantInformation;
 
-                            return View("Details", failedModel);
+                            return DetailsView(failedModel, fromUnits);
                         }
 
                         return RedirectToAction(
@@ -188,7 +206,8 @@ public class ApplicationsController(
                             new
                             {
                                 id,
-                                section = RentalApplicationSection.ResidenceHistory
+                                section = RentalApplicationSection.ResidenceHistory,
+                                from = returnFrom
                             });
                     }
 
@@ -207,7 +226,7 @@ public class ApplicationsController(
                                 RentalApplicationSection.ResidenceHistory,
                                 isReadOnly: false);
 
-                            return View("Details", failedModel);
+                            return DetailsView(failedModel, fromUnits);
                         }
 
                         return RedirectToAction(
@@ -215,7 +234,8 @@ public class ApplicationsController(
                             new
                             {
                                 id,
-                                section = RentalApplicationSection.Summary
+                                section = RentalApplicationSection.Summary,
+                                from = returnFrom
                             });
                     }
 
@@ -249,10 +269,10 @@ public class ApplicationsController(
                         RentalApplicationSection.Summary,
                         isReadOnly: false);
 
-                    return View("Details", failedModel);
+                    return DetailsView(failedModel, fromUnits);
                 }
 
-                return RedirectToAction(nameof(Details), new { id });
+                return RedirectToAction(nameof(Details), new { id, from = returnFrom });
             }
 
             default:
@@ -288,9 +308,10 @@ public class ApplicationsController(
             return RedirectToAction("Index", "AvailableUnits");
         }
 
+        // Started from Available Units, so the back link returns there.
         return RedirectToAction(
             nameof(Details),
-            new { id = result.Application!.Id });
+            new { id = result.Application!.Id, from = FromAvailableUnits });
     }
 
     [HttpGet]

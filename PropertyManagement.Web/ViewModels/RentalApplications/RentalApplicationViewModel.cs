@@ -20,6 +20,10 @@ public class RentalApplicationViewModel
     public string? ReviewComment { get; set; }
     public DateTime? ReviewedAtUtc { get; set; }
 
+    // Set by the controller (never bound from the form); picks the back link.
+    [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]
+    public bool FromAvailableUnits { get; set; }
+
     // A read-only copy for rendering section partials inside the Summary,
     // which is always read-only even while the application is editable.
     public RentalApplicationViewModel AsReadOnly()

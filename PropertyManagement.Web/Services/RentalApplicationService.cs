@@ -137,6 +137,15 @@ public class RentalApplicationService(ApplicationDbContext context)
             .SingleOrDefaultAsync(a => a.Id == applicationId);
     }
 
+    // The lease created when this application was approved; null otherwise.
+    // Its AgreedRent is fixed at approval, unlike the unit's asking rent.
+    public async Task<Lease?> FindLeaseForApplicationAsync(int applicationId)
+    {
+        return await context.Leases
+            .AsNoTracking()
+            .SingleOrDefaultAsync(l => l.RentalApplicationId == applicationId);
+    }
+
     // Transitions in order, with the acting user's email resolved in SQL.
     public async Task<List<StatusHistoryItem>> GetStatusHistoryAsync(
         int applicationId)
@@ -670,6 +679,7 @@ public class RentalApplicationService(ApplicationDbContext context)
             {
                 UnitId = application.UnitId,
                 ApplicantId = application.ApplicantId,
+                RentalApplicationId = application.Id,
                 StartDate = leaseStartDate,
                 EndDate = leaseEndDate,
                 AgreedRent = application.Unit.MonthlyRent

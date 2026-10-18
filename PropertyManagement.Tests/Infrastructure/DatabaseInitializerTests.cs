@@ -111,6 +111,7 @@ public class DatabaseInitializerTests
             if (application.Status == RentalApplicationStatus.Approved)
             {
                 Assert.True(await context.Leases.AnyAsync(l =>
+                    l.RentalApplicationId == application.Id &&
                     l.UnitId == application.UnitId &&
                     l.ApplicantId == application.ApplicantId));
             }

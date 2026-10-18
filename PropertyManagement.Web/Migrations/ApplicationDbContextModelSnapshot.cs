@@ -330,6 +330,9 @@ namespace PropertyManagement.Web.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("RentalApplicationId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -339,6 +342,10 @@ namespace PropertyManagement.Web.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantId");
+
+                    b.HasIndex("RentalApplicationId")
+                        .IsUnique()
+                        .HasFilter("[RentalApplicationId] IS NOT NULL");
 
                     b.HasIndex("UnitId");
 
@@ -737,6 +744,11 @@ namespace PropertyManagement.Web.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PropertyManagement.Domain.Entities.RentalApplication", "RentalApplication")
+                        .WithMany()
+                        .HasForeignKey("RentalApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PropertyManagement.Domain.Entities.Unit", "Unit")
                         .WithMany()
                         .HasForeignKey("UnitId")
@@ -744,6 +756,8 @@ namespace PropertyManagement.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Applicant");
+
+                    b.Navigation("RentalApplication");
 
                     b.Navigation("Unit");
                 });

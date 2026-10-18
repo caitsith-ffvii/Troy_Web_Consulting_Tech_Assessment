@@ -41,6 +41,16 @@ public class LeaseConfiguration : IEntityTypeConfiguration<Lease>
             .HasForeignKey(l => l.UnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // At most one lease per application.
+        builder.HasIndex(l => l.RentalApplicationId)
+            .IsUnique()
+            .HasFilter("[RentalApplicationId] IS NOT NULL");
+
+        builder.HasOne(l => l.RentalApplication)
+            .WithMany()
+            .HasForeignKey(l => l.RentalApplicationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(l => l.Applicant)
             .WithMany()
             .HasForeignKey(l => l.ApplicantId)

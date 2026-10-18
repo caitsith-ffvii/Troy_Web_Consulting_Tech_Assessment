@@ -32,6 +32,10 @@ public class ManageApplicationsController(
         // Null when this manager is the application's applicant.
         var notes = await noteService.GetNotesAsync(id, CurrentUserId);
 
+        var lease = application.Status == RentalApplicationStatus.Approved
+            ? await applicationService.FindLeaseForApplicationAsync(id)
+            : null;
+
         return View(new ManagerApplicationDetailsViewModel
         {
             Application = viewModelFactory.Create(
@@ -41,6 +45,9 @@ public class ManageApplicationsController(
             PropertyName = application.Unit.Property.Name,
             UnitNumber = application.Unit.UnitNumber,
             MonthlyRent = application.Unit.MonthlyRent,
+            AgreedRent = lease?.AgreedRent,
+            LeaseStartDate = lease?.StartDate,
+            LeaseEndDate = lease?.EndDate,
             AssignedManagerEmail =
                 application.Unit.Property.PropertyManager.User.Email ?? string.Empty,
             CanReview = CanReview(application),

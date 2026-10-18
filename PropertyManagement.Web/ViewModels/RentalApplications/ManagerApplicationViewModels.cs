@@ -9,7 +9,15 @@ public class ManagerApplicationDetailsViewModel
 
     public string PropertyName { get; set; } = string.Empty;
     public string UnitNumber { get; set; } = string.Empty;
+
+    // The unit's current asking rent.
     public decimal MonthlyRent { get; set; }
+
+    // From the lease, for approved applications: fixed at approval and
+    // unaffected by later changes to the unit's rent.
+    public decimal? AgreedRent { get; set; }
+    public DateTime? LeaseStartDate { get; set; }
+    public DateTime? LeaseEndDate { get; set; }
     public string AssignedManagerEmail { get; set; } = string.Empty;
 
     // Decided on the server: the assigned manager, on a Submitted application.

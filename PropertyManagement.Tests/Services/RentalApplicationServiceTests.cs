@@ -408,6 +408,7 @@ public class RentalApplicationServiceTests
 
         Assert.Equal(scenario.Applicant.Id, lease.ApplicantId);
         Assert.Equal(scenario.Unit.Id, lease.UnitId);
+        Assert.Equal(scenario.Application.Id, lease.RentalApplicationId);
         Assert.Equal(scenario.Unit.MonthlyRent, lease.AgreedRent);
         Assert.Equal(DateTime.UtcNow.Date, lease.StartDate.Date);
         // Inclusive dates: an exact 12-month term ends the day before the anniversary.
@@ -473,6 +474,40 @@ public class RentalApplicationServiceTests
         Assert.Equal(
             expectApproved ? 2 : 1,
             await context.Leases.CountAsync(l => l.UnitId == scenario.Unit.Id));
+    }
+
+    [Fact]
+    public async Task FindLeaseForApplicationAsync_UnitRentChangedAfterApproval_ReturnsAgreedRent()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+        var rentAtApproval = scenario.Unit.MonthlyRent;
+
+        await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Approved,
+            null);
+
+        var unit = await context.Units.SingleAsync(u => u.Id == scenario.Unit.Id);
+        unit.MonthlyRent = rentAtApproval + 500m;
+        await context.SaveChangesAsync();
+
+        // Act
+        var lease = await service.FindLeaseForApplicationAsync(
+            scenario.Application.Id);
+
+        // Assert
+        Assert.NotNull(lease);
+        Assert.Equal(rentAtApproval, lease.AgreedRent);
     }
 
     [Fact]

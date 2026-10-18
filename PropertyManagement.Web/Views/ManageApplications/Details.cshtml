@@ -12,8 +12,23 @@
     <div>
         <h1>Application #@Model.Application.ApplicationId</h1>
         <p class="mb-0">
-            @Model.PropertyName, unit @Model.UnitNumber · @Model.MonthlyRent.ToString("C") / month
+            @Model.PropertyName, unit @Model.UnitNumber ·
+            @if (Model.AgreedRent is { } agreedRent)
+            {
+                @* The lease's rent, fixed at approval. *@
+                <span>Agreed rent @agreedRent.ToString("C") / month</span>
+            }
+            else
+            {
+                <span>Asking rent @Model.MonthlyRent.ToString("C") / month</span>
+            }
         </p>
+        @if (Model.LeaseStartDate is { } leaseStart && Model.LeaseEndDate is { } leaseEnd)
+        {
+            <p class="mb-0">
+                Lease: @leaseStart.ToShortDateString() – @leaseEnd.ToShortDateString()
+            </p>
+        }
         <p class="text-muted small mb-0">Assigned manager: @Model.AssignedManagerEmail</p>
     </div>
 

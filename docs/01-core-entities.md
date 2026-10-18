@@ -95,6 +95,7 @@ Each entry is stored as a separate record associated directly with its `RentalAp
 **Responsibility:** Represent a lease agreement for a unit.
 
 - References a specific unit and the applicant associated with the lease.
+- References the approved application that created it, when there is one. Approved applications show the lease's agreed rent and dates, not the unit's current asking rent.
 - Stores the agreed rent and lease term, including start and end dates.
 - Preserves historical leases rather than overwriting them when a unit is rented again.
 - Enforces the business invariant that a unit cannot have overlapping active leases.

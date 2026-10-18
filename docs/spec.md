@@ -137,6 +137,7 @@ Progress:
 - [x] Approval creates a lease.
 - [x] Lease term is 12 months.
 - [x] Agreed rent comes from the unit's monthly rent.
+- [x] Leases link to the approving application; approved applications show the lease's agreed rent and dates, unaffected by later rent changes. Evidence: `FindLeaseForApplicationAsync_UnitRentChangedAfterApproval_ReturnsAgreedRent`.
 - [x] Approval rejects overlapping lease periods.
 - [x] Approval uses a SQL Server transaction and unit-row locking.
 - [x] Concurrent-approval test uses separate DbContext instances.
@@ -182,7 +183,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 189/189 passing (2026-10-18).
+- [x] Full suite: 190/190 passing (2026-10-18).
 - [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
 - [x] Clean build from the solution root with no warnings.
 - [?] Verify no unintended tracked or untracked changes remain.

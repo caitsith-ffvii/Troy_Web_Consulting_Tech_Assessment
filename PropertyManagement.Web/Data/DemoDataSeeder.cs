@@ -172,7 +172,7 @@ public class DemoDataSeeder(
             var applicant = applicants[i % applicants.Count];
             var unit = leasedUnits[i];
 
-            CreateApplication(
+            var approved = CreateApplication(
                 applicant,
                 unit,
                 RentalApplicationStatus.Approved,
@@ -182,6 +182,7 @@ public class DemoDataSeeder(
             {
                 Unit = unit,
                 ApplicantId = applicant.Id,
+                RentalApplication = approved,
                 StartDate = today.AddDays(-30 - i),
                 EndDate = today.AddDays(-30 - i).AddMonths(12).AddDays(-1),
                 AgreedRent = unit.MonthlyRent
@@ -269,7 +270,7 @@ public class DemoDataSeeder(
         return units;
     }
 
-    private void CreateApplication(
+    private RentalApplication CreateApplication(
         Applicant applicant,
         Unit unit,
         RentalApplicationStatus status,
@@ -308,7 +309,7 @@ public class DemoDataSeeder(
 
         if (isDraft)
         {
-            return;
+            return application;
         }
 
         AddHistory(
@@ -321,7 +322,7 @@ public class DemoDataSeeder(
 
         if (status == RentalApplicationStatus.Submitted)
         {
-            return;
+            return application;
         }
 
         // Withdrawal is the applicant's action; review outcomes are the
@@ -346,6 +347,8 @@ public class DemoDataSeeder(
             RentalApplicationStatus.Submitted,
             status,
             comment);
+
+        return application;
     }
 
     private void AddResidenceHistory(RentalApplication application)

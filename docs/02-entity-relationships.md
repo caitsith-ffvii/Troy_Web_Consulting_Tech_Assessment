@@ -31,7 +31,8 @@ RentalApplication
 
 Lease
   ├── one Unit
-  └── one associated applicant
+  ├── one associated applicant
+  └── zero or one RentalApplication (the approval that created it)
 ```
 
 ## ApplicationUser and Domain Profiles

@@ -7,7 +7,6 @@ using PropertyManagement.Web.ViewModels.Account;
 
 namespace PropertyManagement.Web.Controllers;
 
-[AllowAnonymous]
 public class AccountController(
     RegistrationService registrationService,
     SignInManager<ApplicationUser> signInManager)

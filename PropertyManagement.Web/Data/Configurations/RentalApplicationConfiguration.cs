@@ -22,6 +22,11 @@ public class RentalApplicationConfiguration
         builder.Property(a => a.UpdatedAtUtc)
             .IsRequired();
 
+        // Conflicting writes (e.g. withdraw vs. approve) fail instead of
+        // silently overwriting each other.
+        builder.Property(a => a.RowVersion)
+            .IsRowVersion();
+
         builder.HasIndex(a => new { a.ApplicantId, a.Status });
 
         builder.HasIndex(a => new { a.UnitId, a.Status });

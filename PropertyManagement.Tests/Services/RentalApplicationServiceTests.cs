@@ -900,6 +900,234 @@ public class RentalApplicationServiceTests
                 h.RentalApplicationId == scenario.Application.Id));
     }
 
+    [Theory]
+    [InlineData(RentalApplicationStatus.Draft)]
+    [InlineData(RentalApplicationStatus.Submitted)]
+    [InlineData(RentalApplicationStatus.Returned)]
+    public async Task WithdrawAsync_OwnApplicationInWithdrawableStatus_WithdrawsAndRecordsHistory(
+        RentalApplicationStatus status)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = status;
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.WithdrawAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.True(result.Succeeded);
+
+        var withdrawnApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Withdrawn,
+            withdrawnApplication.Status);
+
+        var history = await context.ApplicationStatusHistories
+            .SingleAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id);
+
+        Assert.Equal(status, history.PreviousStatus);
+        Assert.Equal(RentalApplicationStatus.Withdrawn, history.NewStatus);
+        Assert.Equal(scenario.ApplicantUser.Id, history.ChangedByUserId);
+        Assert.Null(history.Comment);
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_AnotherApplicant_RejectsWithoutChanges()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.WithdrawAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            unchangedApplication.Status);
+
+        Assert.False(await context.ApplicationStatusHistories
+            .AnyAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id));
+    }
+
+    [Theory]
+    [InlineData(RentalApplicationStatus.Approved)]
+    [InlineData(RentalApplicationStatus.Denied)]
+    [InlineData(RentalApplicationStatus.Withdrawn)]
+    public async Task WithdrawAsync_TerminalStatus_RejectsWithoutChanges(
+        RentalApplicationStatus status)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = status;
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.WithdrawAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(status, unchangedApplication.Status);
+
+        Assert.False(await context.ApplicationStatusHistories
+            .AnyAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id));
+    }
+
+    [Theory]
+    [InlineData(RentalApplicationStatus.Withdrawn)]
+    [InlineData(RentalApplicationStatus.Submitted)]
+    [InlineData(RentalApplicationStatus.Draft)]
+    public async Task ChangeStatusAsync_StatusIsNotReviewOutcome_RejectsWithoutChanges(
+        RentalApplicationStatus newStatus)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            newStatus,
+            "Comment");
+
+        // Assert
+        Assert.False(result.Succeeded);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            unchangedApplication.Status);
+
+        Assert.False(await context.ApplicationStatusHistories
+            .AnyAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id));
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_ApplicationWithdrawnAfterManagerLoadedIt_RejectsApprovalWithoutLease()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        int applicationId;
+        int unitId;
+        string managerUserId;
+        string applicantUserId;
+
+        await using (var setupContext = database.CreateContext())
+        {
+            var scenario =
+                await SubmittedApplicationScenarioFactory.CreateAsync(setupContext);
+
+            applicationId = scenario.Application.Id;
+            unitId = scenario.Unit.Id;
+            managerUserId = scenario.ManagerUser.Id;
+            applicantUserId = scenario.ApplicantUser.Id;
+        }
+
+        await using var managerContext = database.CreateContext();
+        await using var applicantContext = database.CreateContext();
+
+        // The manager's context now holds a Submitted copy that is about
+        // to become stale; the service's query reuses this tracked entity.
+        await managerContext.RentalApplications
+            .SingleAsync(a => a.Id == applicationId);
+
+        var withdrawResult = await new RentalApplicationService(applicantContext)
+            .WithdrawAsync(applicationId, applicantUserId);
+
+        Assert.True(withdrawResult.Succeeded);
+
+        // Act
+        var approveResult = await new RentalApplicationService(managerContext)
+            .ChangeStatusAsync(
+                applicationId,
+                managerUserId,
+                RentalApplicationStatus.Approved,
+                comment: null);
+
+        // Assert
+        Assert.False(approveResult.Succeeded);
+
+        await using var verifyContext = database.CreateContext();
+
+        var application = await verifyContext.RentalApplications
+            .SingleAsync(a => a.Id == applicationId);
+
+        Assert.Equal(RentalApplicationStatus.Withdrawn, application.Status);
+
+        Assert.False(await verifyContext.Leases
+            .AnyAsync(l => l.UnitId == unitId));
+
+        Assert.Equal(1, await verifyContext.ApplicationStatusHistories
+            .CountAsync(h => h.RentalApplicationId == applicationId));
+    }
+
     [Fact]
     public async Task SubmitAsync_AnotherApplicant_SubmissionIsRejected()
     {

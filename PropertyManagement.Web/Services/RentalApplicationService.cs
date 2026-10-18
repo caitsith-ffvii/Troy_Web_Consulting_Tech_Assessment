@@ -8,6 +8,9 @@ public class RentalApplicationService(ApplicationDbContext context)
 {
     private const int LeaseTermMonths = 12;
 
+    private const string ConcurrencyConflictMessage =
+        "This application was changed by someone else. Reload and try again.";
+
     public async Task<CreateDraftApplicationResult> CreateDraftAsync(
         string applicantUserId,
         int unitId)
@@ -116,7 +119,11 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ApplicantInformationCompleted = true;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -158,7 +165,11 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ResidenceHistoryCompleted = false;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -208,7 +219,11 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ResidenceHistoryCompleted = false;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -244,7 +259,11 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ResidenceHistoryCompleted = false;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -285,7 +304,11 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ResidenceHistoryCompleted = true;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
-        await context.SaveChangesAsync();
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -368,8 +391,66 @@ public class RentalApplicationService(ApplicationDbContext context)
             Comment = null
         });
 
-        await context.SaveChangesAsync();
+        // On conflict the undisposed transaction rolls back, so approval
+        // never leaves a lease behind.
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
+
         await transaction.CommitAsync();
+
+        return ChangeApplicationStatusResult.Success();
+    }
+
+    public async Task<ChangeApplicationStatusResult> WithdrawAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        var application = await context.RentalApplications
+            .Include(a => a.Applicant)
+            .SingleOrDefaultAsync(a => a.Id == applicationId);
+
+        if (application is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Application not found.");
+        }
+
+        if (application.Applicant.UserId != applicantUserId)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "You are not authorized to withdraw this application.");
+        }
+
+        if (!application.CanTransitionTo(RentalApplicationStatus.Withdrawn))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                $"Cannot withdraw an application from {application.Status}.");
+        }
+
+        var now = DateTime.UtcNow;
+        var previousStatus = application.Status;
+
+        application.TransitionTo(RentalApplicationStatus.Withdrawn);
+        application.UpdatedAtUtc = now;
+
+        context.ApplicationStatusHistories.Add(new ApplicationStatusHistory
+        {
+            RentalApplicationId = application.Id,
+            ChangedByUserId = applicantUserId,
+            ChangedAtUtc = now,
+            PreviousStatus = previousStatus,
+            NewStatus = RentalApplicationStatus.Withdrawn,
+            Comment = null
+        });
+
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
 
         return ChangeApplicationStatusResult.Success();
     }
@@ -380,6 +461,16 @@ public class RentalApplicationService(ApplicationDbContext context)
         RentalApplicationStatus newStatus,
         string? comment)
     {
+        // Withdrawal and (re)submission belong to the applicant.
+        if (newStatus is not (
+            RentalApplicationStatus.Approved or
+            RentalApplicationStatus.Returned or
+            RentalApplicationStatus.Denied))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Property managers can only approve, return, or deny applications.");
+        }
+
         // Approval needs a transaction so the unit lock, lease check,
         // application update, and lease creation are atomic.
         await using var transaction =
@@ -491,10 +582,32 @@ public class RentalApplicationService(ApplicationDbContext context)
                 : comment.Trim()
         });
 
-        await context.SaveChangesAsync();
+        // On conflict the undisposed transaction rolls back, so approval
+        // never leaves a lease behind.
+        if (!await TrySaveChangesAsync())
+        {
+            return ChangeApplicationStatusResult.Failure(
+                ConcurrencyConflictMessage);
+        }
+
         await transaction.CommitAsync();
 
         return ChangeApplicationStatusResult.Success();
+    }
+
+    // RentalApplication.RowVersion makes a stale write fail rather than
+    // overwrite a concurrent change.
+    private async Task<bool> TrySaveChangesAsync()
+    {
+        try
+        {
+            await context.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
     }
 
     private static string? ValidateResidenceHistoryDates(

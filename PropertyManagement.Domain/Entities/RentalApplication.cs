@@ -32,6 +32,8 @@ public class RentalApplication
 
     public bool ResidenceHistoryCompleted { get; set; }
 
+    public byte[] RowVersion { get; set; } = [];
+
     public bool CanTransitionTo(RentalApplicationStatus newStatus)
     {
         return Status switch

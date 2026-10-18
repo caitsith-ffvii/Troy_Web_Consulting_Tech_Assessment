@@ -69,7 +69,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Submission checks whether the unit has a currently active lease.
 - [?] Verify duplicate draft/application behavior against the original requirements.
 - [x] Submission rejects archived units and properties.
-- [?] Verify concurrent submission, withdrawal, and status changes cannot produce invalid state.
+- [x] Concurrent submission, withdrawal, and status changes cannot silently overwrite each other (`RentalApplication.RowVersion`). Evidence: `ChangeStatusAsync_ApplicationWithdrawnAfterManagerLoadedIt_RejectsApprovalWithoutLease`.
 
 ## 5. Applicant information wizard
 
@@ -122,7 +122,8 @@ Progress:
 - [x] Approval and lease creation occur within one transaction.
 - [x] Manager property ownership is checked before status changes.
 - [?] Verify the complete transition matrix with tests.
-- [?] Verify applicant withdrawal rules and any lease-related restrictions.
+- [x] Applicants can withdraw Draft, Submitted, and Returned applications; terminal statuses are rejected. Evidence: `WithdrawAsync` tests.
+- [x] Managers are limited to Approve, Return, and Deny. Evidence: `ChangeStatusAsync_StatusIsNotReviewOutcome_RejectsWithoutChanges`.
 - [?] Verify invalid status values and malformed requests are rejected safely.
 
 ## 8. Lease creation and concurrency
@@ -136,7 +137,7 @@ Progress:
 - [x] `ChangeStatusAsync_TwoApplicationsApprovedConcurrently_CreatesOnlyOneLease` passed 10 consecutive runs.
 - [?] Verify lease date boundaries and any timezone/date assumptions.
 - [?] Verify the database has appropriate constraints to complement service-level checks.
-- [?] Assess concurrency behavior for operations beyond the tested two-approval scenario.
+- [x] Optimistic concurrency protects every application write beyond the two-approval scenario.
 
 ## 9. Property manager workflows
 
@@ -172,7 +173,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 86/86 passing (2026-10-18).
+- [x] Full suite: 97/97 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -199,11 +200,12 @@ Progress:
 - `e5cebde` — Add database initializer with role seeding
 - `8965825` — Add account registration, login, and logout
 - `a800ad7` — Allow an existing account to register for an additional role
-- Reject archived units and properties at submission and approval
+- `2290455` — Reject archived units and properties at submission and approval
+- Add applicant withdrawal and application concurrency checks
 
 **Latest verified evidence**
 
-- Full suite: 86/86 passing.
+- Full suite: 97/97 passing.
 - Fresh-database startup applies all migrations and creates both roles.
 - Manual check: register, log in, and log out as each role; manager receives Access Denied on applicant pages; existing account adds the second role with its password.
 

@@ -135,6 +135,15 @@ public class RentalApplicationService(ApplicationDbContext context)
             return ChangeApplicationStatusResult.Failure(result.Error!);
         }
 
+        var dateError = ValidateResidenceHistoryDates(
+            entry.MoveInDate,
+            entry.MoveOutDate);
+
+        if (dateError is not null)
+        {
+            return ChangeApplicationStatusResult.Failure(dateError);
+        }
+
         var application = result.Application!;
 
         application.ResidenceHistory.Add(new ResidenceHistoryEntry
@@ -177,6 +186,15 @@ public class RentalApplicationService(ApplicationDbContext context)
         {
             return ChangeApplicationStatusResult.Failure(
                 "Residence history entry not found.");
+        }
+
+        var dateError = ValidateResidenceHistoryDates(
+            updatedEntry.MoveInDate,
+            updatedEntry.MoveOutDate);
+
+        if (dateError is not null)
+        {
+            return ChangeApplicationStatusResult.Failure(dateError);
         }
 
         entry.Address = updatedEntry.Address;
@@ -249,7 +267,9 @@ public class RentalApplicationService(ApplicationDbContext context)
             string.IsNullOrWhiteSpace(entry.Address) ||
             string.IsNullOrWhiteSpace(entry.LandlordName) ||
             string.IsNullOrWhiteSpace(entry.LandlordPhoneNumber) ||
-            entry.MoveOutDate < entry.MoveInDate);
+            ValidateResidenceHistoryDates(
+                entry.MoveInDate,
+                entry.MoveOutDate) is not null);
 
         if (hasInvalidEntry)
         {
@@ -455,6 +475,24 @@ public class RentalApplicationService(ApplicationDbContext context)
         await transaction.CommitAsync();
 
         return ChangeApplicationStatusResult.Success();
+    }
+
+    private static string? ValidateResidenceHistoryDates(
+        DateTime moveInDate,
+        DateTime? moveOutDate)
+    {
+        if (moveInDate.Date > DateTime.Today)
+        {
+            return "Move-in date cannot be in the future.";
+        }
+
+        if (moveOutDate.HasValue &&
+            moveOutDate.Value.Date < moveInDate.Date)
+        {
+            return "Move-out date cannot be before move-in date.";
+        }
+
+        return null;
     }
 
     private async Task<EditableApplicationResult> GetEditableApplicationAsync(

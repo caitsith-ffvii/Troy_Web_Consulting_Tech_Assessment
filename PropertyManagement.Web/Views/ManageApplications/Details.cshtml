@@ -1,0 +1,48 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.ManagerApplicationDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Application #{Model.Application.ApplicationId}";
+}
+
+<p class="mb-2">
+    <a asp-action="Index">&larr; Applications</a>
+</p>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1>Application #@Model.Application.ApplicationId</h1>
+        <p class="mb-0">
+            @Model.PropertyName, unit @Model.UnitNumber · @Model.MonthlyRent.ToString("C") / month
+        </p>
+        <p class="text-muted small mb-0">Assigned manager: @Model.AssignedManagerEmail</p>
+    </div>
+
+    <div class="text-end">
+        <p class="mb-2">Status: <strong>@Model.Application.Status</strong></p>
+
+        @if (Model.CanReview)
+        {
+            @* No refresh target: on success the modal script reloads the page. *@
+            <button type="button"
+                    class="btn btn-primary"
+                    data-modal-url="@Url.Action("Review", new { id = Model.Application.ApplicationId })">
+                Review
+            </button>
+        }
+        else if (Model.Application.Status == PropertyManagement.Domain.Entities.RentalApplicationStatus.Submitted)
+        {
+            <p class="small text-muted mb-0">Only the assigned manager can review this application.</p>
+        }
+    </div>
+</div>
+
+@* The same read-only Summary partial applicants see. *@
+<partial name="~/Views/Applications/_SummarySection.cshtml" model="Model.Application" />
+
+@await Component.InvokeAsync("StatusHistory", new { applicationId = Model.Application.ApplicationId })
+
+<partial name="_Modal" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

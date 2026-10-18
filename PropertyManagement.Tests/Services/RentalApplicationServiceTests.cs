@@ -1209,6 +1209,99 @@ public class RentalApplicationServiceTests
     }
 
     [Fact]
+    public async Task FindManagerApplicationAsync_AnyPropertyManager_ReturnsApplication()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        // A manager from another scenario is not assigned to this property.
+        var otherScenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var application = await service.FindManagerApplicationAsync(
+            scenario.Application.Id,
+            otherScenario.ManagerUser.Id);
+
+        // Assert
+        Assert.NotNull(application);
+        Assert.Equal(scenario.Application.Id, application.Id);
+        Assert.Equal(
+            scenario.ManagerUser.Id,
+            application.Unit.Property.PropertyManager.UserId);
+    }
+
+    [Fact]
+    public async Task FindManagerApplicationAsync_UserIsNotPropertyManager_ReturnsNull()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var application = await service.FindManagerApplicationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.Null(application);
+    }
+
+    [Fact]
+    public async Task GetStatusHistoryAsync_ReturnsTransitionsInOrderWithActorEmails()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var service = new RentalApplicationService(context);
+
+        await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Returned,
+            "Please add residence history.");
+
+        await service.WithdrawAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Act
+        var history = await service.GetStatusHistoryAsync(
+            scenario.Application.Id);
+
+        // Assert
+        Assert.Equal(2, history.Count);
+
+        Assert.Equal(RentalApplicationStatus.Returned, history[0].NewStatus);
+        Assert.Equal("Please add residence history.", history[0].Comment);
+        Assert.Equal(scenario.ManagerUser.Email, history[0].ChangedByEmail);
+
+        Assert.Equal(RentalApplicationStatus.Withdrawn, history[1].NewStatus);
+        Assert.Equal(scenario.ApplicantUser.Email, history[1].ChangedByEmail);
+    }
+
+    [Fact]
     public async Task SubmitAsync_AnotherApplicant_SubmissionIsRejected()
     {
         var database = new SqlServerTestDatabase();

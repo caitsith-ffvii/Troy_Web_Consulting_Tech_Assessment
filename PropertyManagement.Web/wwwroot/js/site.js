@@ -3,7 +3,8 @@
 // An element with data-modal-url opens the shared #app-modal and loads the
 // partial view returned by that URL. Forms inside the modal post via fetch:
 //   - 204 No Content: success. Close the modal and reload the element named
-//     by the trigger's data-refresh-target from its data-refresh-url.
+//     by the trigger's data-refresh-target from its data-refresh-url, or
+//     the whole page when the trigger names no target.
 //   - HTML: the server re-rendered the form (e.g. validation errors), so it
 //     replaces the modal content in place.
 (() => {
@@ -31,8 +32,11 @@
         }
     };
 
+    // Without a refresh target the change affects the whole page
+    // (e.g. a status change), so reload it.
     const refresh = async () => {
         if (!refreshTarget) {
+            window.location.reload();
             return;
         }
 

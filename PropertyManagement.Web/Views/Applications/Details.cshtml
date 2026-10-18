@@ -13,7 +13,21 @@
 
 <h1>Rental Application #@Model.ApplicationId</h1>
 
-<p>Status: <strong>@Model.Status</strong></p>
+<div class="d-flex align-items-center gap-3 mb-3">
+    <span>Status: <strong>@Model.Status</strong></span>
+
+    @if (Model.Status is PropertyManagement.Domain.Entities.RentalApplicationStatus.Draft
+        or PropertyManagement.Domain.Entities.RentalApplicationStatus.Submitted
+        or PropertyManagement.Domain.Entities.RentalApplicationStatus.Returned)
+    {
+        @* Outside the Continue/Back form; no refresh target, so the page reloads. *@
+        <button type="button"
+                class="btn btn-sm btn-outline-danger"
+                data-modal-url="@Url.Action("Withdraw", new { id = Model.ApplicationId })">
+            Withdraw
+        </button>
+    }
+</div>
 
 @if (Model.ReviewComment is not null)
 {

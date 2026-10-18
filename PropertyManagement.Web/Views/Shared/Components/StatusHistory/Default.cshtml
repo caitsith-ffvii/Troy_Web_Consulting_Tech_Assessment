@@ -1,0 +1,34 @@
+@model List<PropertyManagement.Web.Services.StatusHistoryItem>
+
+<h2 class="h4 mt-4">Status history</h2>
+
+@if (Model.Count == 0)
+{
+    <p>No status changes yet; this application is still a draft.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Change</th>
+                    <th>By</th>
+                    <th>Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-nowrap">@item.ChangedAtUtc.ToLocalTime().ToString("g")</td>
+                        <td class="text-nowrap">@item.PreviousStatus &rarr; <strong>@item.NewStatus</strong></td>
+                        <td>@item.ChangedByEmail</td>
+                        <td style="white-space: pre-line">@item.Comment</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

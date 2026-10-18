@@ -322,6 +322,48 @@ public class ApplicationsController(
             new { id = result.Application!.Id });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Withdraw(int id)
+    {
+        var application = await applicationService.FindApplicantApplicationAsync(
+            id,
+            CurrentUserId);
+
+        if (application is null ||
+            !application.CanTransitionTo(RentalApplicationStatus.Withdrawn))
+        {
+            return NotFound();
+        }
+
+        return PartialView("_RemoveConfirm", WithdrawConfirmModel(id));
+    }
+
+    // 204 on success; the modal script then reloads the page.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ActionName(nameof(Withdraw))]
+    public async Task<IActionResult> WithdrawConfirmed(int id)
+    {
+        var result = await applicationService.WithdrawAsync(id, CurrentUserId);
+
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(string.Empty, result.Error!);
+            return PartialView("_RemoveConfirm", WithdrawConfirmModel(id));
+        }
+
+        return NoContent();
+    }
+
+    private RemoveConfirmViewModel WithdrawConfirmModel(int id) =>
+        new()
+        {
+            Title = $"Withdraw application #{id}",
+            Message = "Withdrawing is final: the application can no longer be edited or submitted. You can apply for the unit again later.",
+            ActionUrl = Url.Action(nameof(Withdraw), new { id })!,
+            ConfirmLabel = "Withdraw"
+        };
+
     // Residence history modals. Each action returns its partial when it
     // needs re-rendering and 204 No Content on success, which closes the
     // modal and refreshes #residence-history-list.

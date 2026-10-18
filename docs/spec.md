@@ -146,16 +146,17 @@ Progress:
 
 - [x] Manager application queue (`ManageApplications`) and applicant "My applications" list, sharing `_ApplicationList`.
 - [x] Managers see all applications; applicants see only their own. Evidence: `ApplicationListServiceTests`.
-- [ ] Review actions are limited to the property's assigned manager in the UI (service check exists).
+- [x] Review actions are limited to the property's assigned manager in the UI and service. Evidence: manual check; `ChangeStatusAsync_ManagerDoesNotOwnProperty_RejectsOperation`.
 - [x] Filtering by status and property in the database. Evidence: `GetManagerApplicationsAsync_FiltersByStatusAndProperty`.
 - [x] Sorting by a whitelist (submitted, applicant, property, status) in either direction.
 - [x] Database-side pagination and counts. Evidence: `GetManagerApplicationsAsync_SecondPage_ReturnsThatPageAndTotals`.
 - [x] Stable ordering with Id as the tie-breaker. Evidence: `GetManagerApplicationsAsync_DefaultSort_OldestSubmissionFirstWithIdTieBreaker`.
 - [x] Manager default: Submitted, oldest submission first (`SubmittedAtUtc`, reset on resubmission).
 - [x] Page size of 20 by default.
-- [?] Application details and status-change UI for managers.
+- [x] Manager application details (read-only Summary partial) and review modal: Approve/Return/Deny with comment required for Return/Deny. Evidence: `ReviewFormViewModelTests`, `FindManagerApplicationAsync` tests; manual check.
+- [x] Applicants withdraw open applications through a confirmation modal. Evidence: manual check; `WithdrawAsync` tests.
 - [x] Applicants see the latest return or denial comment as a banner, and Returned shows "action needed" in their list. Evidence: `Create_ReturnedOrDenied_MapsLatestReviewComment`; manual check.
-- [?] Managers see the full status history with actor, time, and comment.
+- [x] Managers see the full status history with actor, time, and comment (`StatusHistory` view component). Evidence: `GetStatusHistoryAsync_ReturnsTransitionsInOrderWithActorEmails`.
 
 ## 10. Seeding and startup
 
@@ -178,7 +179,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 139/139 passing (2026-10-18).
+- [x] Full suite: 146/146 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -211,11 +212,13 @@ Progress:
 - `5661c95` — Add property and unit management through modals
 - `dedc52d` — Add applicant unit browsing and resume open applications
 - `72a6e16` — Add residence history modals
-- Add application lists and show review comments to applicants
+- `31d115a` — Add application lists and show review comments to applicants
+- Add manager review, status history, and applicant withdrawal
 
 **Latest verified evidence**
 
-- Full suite: 139/139 passing.
+- Full suite: 146/146 passing.
+- Manual smoke test of the full workflow: review as assigned vs. unassigned manager, return with comment, applicant resubmits, withdraw, approve removes the unit from available units.
 - Manual check: manager queue paging/sorting/filtering, applicant list, return/denial banners.
 - Manual check: residence modals add/edit/remove, date validation in place, list refresh without reload, read-only applications show no residence actions.
 - Manual check: available units list, Apply opens a new draft, applying again resumes it, readable step label, link back to available units.
@@ -226,7 +229,6 @@ Progress:
 
 **Still to confirm**
 
-- Manager application details, review modal, and status history.
 - README and final review against the assessment.
 
 ## Working protocol

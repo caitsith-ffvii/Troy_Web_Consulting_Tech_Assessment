@@ -86,4 +86,5 @@ public class RemoveConfirmViewModel
     public string Title { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public string ActionUrl { get; set; } = string.Empty;
+    public string ConfirmLabel { get; set; } = "Remove";
 }

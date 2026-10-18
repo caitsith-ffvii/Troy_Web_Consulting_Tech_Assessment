@@ -1,0 +1,55 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.ReviewFormViewModel
+@using PropertyManagement.Web.ViewModels.RentalApplications
+
+<form asp-controller="ManageApplications"
+      asp-action="Review"
+      asp-route-id="@Model.ApplicationId"
+      method="post">
+    <div class="modal-header">
+        <h2 class="modal-title fs-5">Review application #@Model.ApplicationId</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <fieldset class="mb-3">
+            <legend class="fs-6">Outcome</legend>
+
+            <div class="form-check">
+                <input class="form-check-input" type="radio" asp-for="Outcome"
+                       value="@ReviewOutcome.Approve" id="outcome-approve" />
+                <label class="form-check-label" for="outcome-approve">
+                    Approve: creates a 12-month lease starting today at @Model.MonthlyRent.ToString("C") / month
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="radio" asp-for="Outcome"
+                       value="@ReviewOutcome.Return" id="outcome-return" />
+                <label class="form-check-label" for="outcome-return">
+                    Return: the applicant can correct and resubmit
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="radio" asp-for="Outcome"
+                       value="@ReviewOutcome.Deny" id="outcome-deny" />
+                <label class="form-check-label" for="outcome-deny">Deny</label>
+            </div>
+
+            <span asp-validation-for="Outcome" class="text-danger"></span>
+        </fieldset>
+
+        <div class="mb-3">
+            <label asp-for="Comment" class="form-label">Comment (required to return or deny)</label>
+            <textarea asp-for="Comment" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Comment" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit review</button>
+    </div>
+</form>

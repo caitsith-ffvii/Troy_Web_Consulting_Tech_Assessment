@@ -111,6 +111,53 @@ public class RentalApplicationService(ApplicationDbContext context)
             .SingleOrDefaultAsync();
     }
 
+    // Any property manager may view any application; whether they may
+    // review it depends on the property assignment, checked separately.
+    public async Task<RentalApplication?> FindManagerApplicationAsync(
+        int applicationId,
+        string managerUserId)
+    {
+        var isManager = await context.PropertyManagers
+            .AnyAsync(m => m.UserId == managerUserId);
+
+        if (!isManager)
+        {
+            return null;
+        }
+
+        return await context.RentalApplications
+            .AsNoTracking()
+            .Include(a => a.ApplicantInformation)
+            .Include(a => a.ResidenceHistory)
+            .Include(a => a.StatusHistory)
+            .Include(a => a.Unit)
+                .ThenInclude(u => u.Property)
+                    .ThenInclude(p => p.PropertyManager)
+                        .ThenInclude(m => m.User)
+            .SingleOrDefaultAsync(a => a.Id == applicationId);
+    }
+
+    // Transitions in order, with the acting user's email resolved in SQL.
+    public async Task<List<StatusHistoryItem>> GetStatusHistoryAsync(
+        int applicationId)
+    {
+        return await context.ApplicationStatusHistories
+            .AsNoTracking()
+            .Where(h => h.RentalApplicationId == applicationId)
+            .OrderBy(h => h.ChangedAtUtc)
+            .ThenBy(h => h.Id)
+            .Select(h => new StatusHistoryItem(
+                h.PreviousStatus,
+                h.NewStatus,
+                h.ChangedAtUtc,
+                h.Comment,
+                context.Users
+                    .Where(u => u.Id == h.ChangedByUserId)
+                    .Select(u => u.Email)
+                    .FirstOrDefault() ?? "Unknown user"))
+            .ToListAsync();
+    }
+
     public async Task<ChangeApplicationStatusResult> SaveApplicantInformationAsync(
         int applicationId,
         string applicantUserId,
@@ -694,6 +741,13 @@ public class RentalApplicationService(ApplicationDbContext context)
         return EditableApplicationResult.Success(application);
     }
 }
+
+public sealed record StatusHistoryItem(
+    RentalApplicationStatus PreviousStatus,
+    RentalApplicationStatus NewStatus,
+    DateTime ChangedAtUtc,
+    string? Comment,
+    string ChangedByEmail);
 
 public sealed record ChangeApplicationStatusResult(
     bool Succeeded,

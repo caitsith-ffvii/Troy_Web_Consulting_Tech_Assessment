@@ -193,7 +193,8 @@ Progress:
 - [x] SQL Server configuration and automatic database creation/migration documented.
 - [x] Document demo credentials without exposing production secrets.
 - [x] Running the application and test suite documented.
-- [?] Verify a fresh checkout can be configured and run using only the documentation.
+- [x] A fresh checkout was configured and run using only the README.
+- [x] Seeding re-verified against a dropped and recreated development database.
 - [x] Final review against the assessment; the read-only section partial gap was found and fixed.
 - [?] Final Git status and commit review.
 
@@ -233,8 +234,7 @@ Progress:
 **Still to confirm**
 
 - Manual check of read-only section rendering (Summary and manager details page).
-- Fresh checkout configured and run using only the README.
-- Resolve the commit on `origin/main` that is not in the local branch, then push.
+- Push the local commits to `origin/main`.
 
 ## Working protocol
 

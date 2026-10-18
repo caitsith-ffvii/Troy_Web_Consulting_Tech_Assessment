@@ -1,0 +1,80 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
+
+@{
+    ViewData["Title"] = "Rental Application";
+}
+
+<h1>Rental Application</h1>
+
+<div>
+    <h2>Application #@Model.ApplicationId</h2>
+
+    <p>
+        <strong>Status:</strong> @Model.Status
+    </p>
+
+    <p>
+        <strong>Applicant information:</strong>
+        @(Model.ApplicantInformationCompleted ? "Complete" : "Incomplete")
+    </p>
+
+    <p>
+        <strong>Residence history:</strong>
+        @(Model.ResidenceHistoryCompleted ? "Complete" : "Incomplete")
+    </p>
+</div>
+
+<section>
+    <h2>Applicant Information</h2>
+
+    <dl>
+        <dt>Name</dt>
+        <dd>@Model.ApplicantInformation.FirstName @Model.ApplicantInformation.LastName</dd>
+
+        <dt>Phone</dt>
+        <dd>@Model.ApplicantInformation.PhoneNumber</dd>
+
+        <dt>Email</dt>
+        <dd>@Model.ApplicantInformation.Email</dd>
+
+        <dt>Current address</dt>
+        <dd>@Model.ApplicantInformation.CurrentAddress</dd>
+    </dl>
+</section>
+
+<section>
+    <h2>Residence History</h2>
+
+    @if (Model.ResidenceHistory.Count == 0)
+    {
+        <p>No residence history has been added.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Landlord</th>
+                    <th>Landlord phone</th>
+                    <th>Move-in date</th>
+                    <th>Move-out date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var residence in Model.ResidenceHistory)
+                {
+                    <tr>
+                        <td>@residence.Address</td>
+                        <td>@residence.LandlordName</td>
+                        <td>@residence.LandlordPhoneNumber</td>
+                        <td>@residence.MoveInDate.ToShortDateString()</td>
+                        <td>
+                            @(residence.MoveOutDate?.ToShortDateString() ?? "Current residence")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

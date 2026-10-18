@@ -1,0 +1,34 @@
+
+@model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
+
+<h2>Applicant Information</h2>
+
+<div class="mb-3">
+    <label asp-for="ApplicantInformation.FirstName" class="form-label"></label>
+    <input asp-for="ApplicantInformation.FirstName" class="form-control" />
+    <span asp-validation-for="ApplicantInformation.FirstName" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ApplicantInformation.LastName" class="form-label"></label>
+    <input asp-for="ApplicantInformation.LastName" class="form-control" />
+    <span asp-validation-for="ApplicantInformation.LastName" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ApplicantInformation.PhoneNumber" class="form-label"></label>
+    <input asp-for="ApplicantInformation.PhoneNumber" class="form-control" />
+    <span asp-validation-for="ApplicantInformation.PhoneNumber" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ApplicantInformation.Email" class="form-label"></label>
+    <input asp-for="ApplicantInformation.Email" class="form-control" />
+    <span asp-validation-for="ApplicantInformation.Email" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ApplicantInformation.CurrentAddress" class="form-label"></label>
+    <input asp-for="ApplicantInformation.CurrentAddress" class="form-control" />
+    <span asp-validation-for="ApplicantInformation.CurrentAddress" class="text-danger"></span>
+</div>

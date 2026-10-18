@@ -156,8 +156,10 @@ public class RegistrationServiceTests
         var context = database.CreateContext();
         var provider = IdentityTestServices.Create(context);
 
-        await IdentityTestServices.EnsureRolesAsync(
-            provider.GetRequiredService<RoleManager<IdentityRole>>());
+        await new DatabaseInitializer(
+                context,
+                provider.GetRequiredService<RoleManager<IdentityRole>>())
+            .InitializeAsync();
 
         var userManager =
             provider.GetRequiredService<UserManager<ApplicationUser>>();

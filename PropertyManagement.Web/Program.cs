@@ -14,6 +14,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<RentalApplicationService>();
+builder.Services.AddScoped<RegistrationService>();
+builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddTransient<RentalApplicationViewModelFactory>();
 
 builder.Services
@@ -21,6 +23,13 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await scope.ServiceProvider
+        .GetRequiredService<DatabaseInitializer>()
+        .InitializeAsync();
+}
 
 if (!app.Environment.IsDevelopment())
 {

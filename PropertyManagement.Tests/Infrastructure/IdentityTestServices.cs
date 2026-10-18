@@ -22,16 +22,4 @@ public static class IdentityTestServices
 
         return services.BuildServiceProvider();
     }
-
-    public static async Task EnsureRolesAsync(
-        RoleManager<IdentityRole> roleManager)
-    {
-        foreach (var role in new[] { Roles.Applicant, Roles.PropertyManager })
-        {
-            if (!await roleManager.RoleExistsAsync(role))
-            {
-                await roleManager.CreateAsync(new IdentityRole(role));
-            }
-        }
-    }
 }

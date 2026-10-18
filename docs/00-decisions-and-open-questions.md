@@ -109,8 +109,9 @@ A rejected transition does not create a successful status-history record. Separa
 - Identity account creation and domain-profile creation must succeed or fail as one logical operation.
 - A single account may have both roles; the architecture must not assume the roles are mutually exclusive.
 - Applicant operations resolve the applicant profile from the authenticated account rather than trusting a posted Applicant ID.
-- Property managers can access only properties assigned to them.
-- Cross-property visibility is out of scope.
+- Each property has one assigned property manager; a manager can manage multiple properties. The manager who creates a property is assigned to it.
+- Any Property Manager can view all properties, units, and applications.
+- Only managers assigned to a property can edit that property and its units or review its applications.
 - Authorization is enforced server-side, not merely by hiding UI controls.
 
 ### Properties, Units, and Archiving
@@ -141,7 +142,7 @@ A rejected transition does not create a successful status-history record. Separa
 ### Application Listing
 
 - Applicants see only their own applications.
-- Property managers see applications for properties they are assigned to manage.
+- Property managers see all applications.
 - Authorization scope, status filter, and property filter are applied in the database query.
 - Lists use database-side sorting and pagination.
 - Default status filter: `Submitted`.
@@ -152,7 +153,7 @@ A rejected transition does not create a successful status-history record. Separa
 - The service accepts filtering, sorting, and pagination parameters and returns a reusable paginated result.
 - The result includes `Items`, `TotalCount`, `PageNumber`, `PageSize`, and `TotalPages`.
 - The controller maps results into the UI view model.
-- Property filter options contain only properties assigned to the current manager.
+- Property filter options contain all properties.
 
 ### Modals and Validation
 

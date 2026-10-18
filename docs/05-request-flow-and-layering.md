@@ -89,8 +89,8 @@ The `DbContext` is registered with a scoped lifetime.
 Authorization is enforced on the server, not by hiding or showing UI controls.
 
 - Applicant operations must verify that the application belongs to the authenticated applicant.
-- Property manager operations must verify that the manager is assigned to the relevant property.
-- A user's role alone does not establish access to every property.
+- Any property manager can view all properties, units, and applications.
+- Property manager operations that edit a property or its units, or review its applications, must verify that the manager is assigned to that property.
 - Services must not blindly trust applicant IDs, manager IDs, or other authorization-sensitive values supplied by the browser.
 
 Controllers and ASP.NET Core authorization can reject unauthorized requests early. Services must still enforce the business authorization requirements for the operations they execute.

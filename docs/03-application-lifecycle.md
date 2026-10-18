@@ -142,7 +142,7 @@ An attempted but rejected transition does not create a successful transition rec
 ## Application List Behavior
 
 - Applicants see only their own applications.
-- Property managers see applications for properties they are assigned to manage.
+- Property managers see all applications.
 - The authorization scope, status filter, and property filter are applied in the database query.
 - Lists use database-side sorting and pagination.
 - The default manager review queue filters to `Submitted`, sorts by oldest submission first, and uses a page size of 20.

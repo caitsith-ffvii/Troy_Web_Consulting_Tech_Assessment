@@ -389,10 +389,9 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         var ownsProperty = await context.Units
-        .AnyAsync(u =>
-            u.Id == application.UnitId &&
-            u.Property.PropertyManagers.Any(
-                manager => manager.UserId == changedByUserId));
+            .AnyAsync(u =>
+                u.Id == application.UnitId &&
+                u.Property.PropertyManager.UserId == changedByUserId);
 
         if (!ownsProperty)
         {

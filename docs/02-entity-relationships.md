@@ -13,7 +13,7 @@ Applicant
 
 Property
   ├── many Units
-  └── many PropertyManagers
+  └── one PropertyManager
 
 PropertyManager
   └── many Properties
@@ -54,21 +54,18 @@ Whether both profiles are created at registration or when a role is granted rema
 
 ## Property and PropertyManager
 
-This is a **many-to-many relationship**:
+This is a **one-to-many relationship**:
 
+- Each property has exactly one assigned property manager.
 - A property manager can manage multiple properties.
-- A property can have multiple property managers.
-
-For this assessment, use a simple many-to-many relationship.
-
-Do not introduce a `PropertyManagementAssignment` entity solely to support hypothetical future fields such as assignment dates, access history, or who granted access. Revisit this if the business requirements justify assignment-specific data or lifecycle behavior.
+- The manager who creates a property is assigned to it.
 
 The manager-property relationship is distinct from role authorization:
 
-- The `PropertyManager` role permits manager-category actions.
-- The property assignment determines which specific properties the manager can manage.
+- The `PropertyManager` role permits viewing all properties, units, and applications.
+- The property assignment determines which properties the manager can edit, along with their units, and whose applications the manager can review.
 
-The server must verify property assignment on requests that operate on a property. Hiding links or buttons in the UI is not sufficient authorization.
+The server must verify property assignment on requests that edit a property, its units, or review its applications. Hiding links or buttons in the UI is not sufficient authorization.
 
 ## Property and Unit
 
@@ -108,5 +105,5 @@ The current status is stored directly for convenient workflow checks and filteri
 - Only one active lease may cover a unit at a time.
 - A lease captures the agreed rent and term.
 - Submitted applicant information is snapshotted.
-- Property-manager access is limited by both role and property assignment.
-- Keep the manager-property relationship simple until a requirement justifies a dedicated assignment entity.
+- Each property has one assigned property manager; a manager can manage multiple properties.
+- Property managers can view all properties, units, and applications; editing and reviewing require being the property's assigned manager.

@@ -1,0 +1,25 @@
+@model PropertyListViewModel
+
+@{
+    ViewData["Title"] = "Properties";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Properties</h1>
+    <button type="button"
+            class="btn btn-primary"
+            data-modal-url="@Url.Action("Create")"
+            data-refresh-target="#property-list">
+        Add property
+    </button>
+</div>
+
+<div id="property-list" data-refresh-url="@Url.Action("List")">
+    <partial name="_PropertyList" model="Model" />
+</div>
+
+<partial name="_Modal" />
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

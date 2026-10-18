@@ -1,0 +1,104 @@
+@model PropertyListViewModel
+
+@if (Model.Properties.Count == 0)
+{
+    <p>No properties yet.</p>
+}
+
+@foreach (var property in Model.Properties)
+{
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <strong>@property.Name</strong>
+                <div class="small text-muted">
+                    @property.Address · Managed by @property.ManagerEmail
+                </div>
+            </div>
+
+            @if (property.CanEdit)
+            {
+                <div class="d-flex gap-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            data-modal-url="@Url.Action("Create", "Units", new { propertyId = property.Id })"
+                            data-refresh-target="#property-list">
+                        Add unit
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-modal-url="@Url.Action("Edit", "Properties", new { id = property.Id })"
+                            data-refresh-target="#property-list">
+                        Edit
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger"
+                            data-modal-url="@Url.Action("Remove", "Properties", new { id = property.Id })"
+                            data-refresh-target="#property-list">
+                        Remove
+                    </button>
+                </div>
+            }
+        </div>
+
+        <div class="card-body p-0">
+            @if (property.Units.Count == 0)
+            {
+                <p class="m-3">No units.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Unit</th>
+                                <th>Type</th>
+                                <th>Bedrooms</th>
+                                <th>Monthly rent</th>
+                                @if (property.CanEdit)
+                                {
+                                    <th></th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var unit in property.Units)
+                            {
+                                <tr>
+                                    <td>@unit.UnitNumber</td>
+                                    <td>
+                                        @unit.UnitTypeName
+                                        @if (!unit.UnitTypeIsActive)
+                                        {
+                                            <span class="badge text-bg-secondary">inactive</span>
+                                        }
+                                    </td>
+                                    <td>@unit.Bedrooms</td>
+                                    <td>@unit.MonthlyRent.ToString("C")</td>
+                                    @if (property.CanEdit)
+                                    {
+                                        <td class="text-end">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-link"
+                                                    data-modal-url="@Url.Action("Edit", "Units", new { id = unit.Id })"
+                                                    data-refresh-target="#property-list">
+                                                Edit
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-link text-danger"
+                                                    data-modal-url="@Url.Action("Remove", "Units", new { id = unit.Id })"
+                                                    data-refresh-target="#property-list">
+                                                Remove
+                                            </button>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}

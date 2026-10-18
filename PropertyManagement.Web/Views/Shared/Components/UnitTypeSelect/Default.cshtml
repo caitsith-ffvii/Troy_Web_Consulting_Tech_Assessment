@@ -1,0 +1,17 @@
+@model PropertyManagement.Web.ViewComponents.UnitTypeSelectViewModel
+
+<select name="UnitTypeId"
+        id="UnitTypeId"
+        class="form-select"
+        data-val="true"
+        data-val-range="Select a unit type."
+        data-val-range-min="1"
+        data-val-range-max="2147483647">
+    <option value="0">Select a unit type</option>
+    @foreach (var option in Model.Options)
+    {
+        <option value="@option.Id" selected="@(option.Id == Model.SelectedUnitTypeId)">
+            @option.Name@(option.IsActive ? "" : " (inactive)")
+        </option>
+    }
+</select>

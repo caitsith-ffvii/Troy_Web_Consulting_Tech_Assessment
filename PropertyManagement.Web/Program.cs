@@ -15,6 +15,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<RentalApplicationService>();
 builder.Services.AddScoped<RegistrationService>();
+builder.Services.AddScoped<PropertyService>();
+builder.Services.AddScoped<UnitService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddTransient<RentalApplicationViewModelFactory>();
 

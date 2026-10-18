@@ -48,12 +48,13 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 
 - [x] Property and unit domain models exist.
 - [x] Archived properties and units are rejected when creating new applications.
-- [?] Property and unit CRUD workflows.
-- [ ] All managers can view all properties and units; only assigned managers can edit them.
-- [?] Unit type lookup and inactive-type handling.
-- [?] Archive behavior preserves historical applications and leases.
+- [x] Property and unit add, edit, and remove through modals; invalid submissions re-render the partial in place, and success closes the modal and refreshes the list. Evidence: `PropertyServiceTests`, `UnitServiceTests`; manual check.
+- [x] All managers can view all properties and units; only the assigned manager can edit them. Evidence: unassigned-manager tests; manual check.
+- [x] Unit type lookup and inactive-type handling: inactive types stay on existing units but cannot be newly selected (enforced by `UnitService`). Evidence: `UnitServiceTests`.
+- [x] Remove deletes records with no applications or leases and archives the rest, preserving history. Evidence: `RemoveAsync` tests.
 - [x] Archived units/properties cannot be used for new applications or leases. Evidence: `UnitOrPropertyArchived` tests.
-- [?] Verify property/unit validation and database constraints.
+- [x] Property/unit validation in services, plus a unique unit number per property in the database.
+- [x] View component: `UnitTypeSelect` renders selectable unit types.
 
 ## 4. Rental application lifecycle
 
@@ -173,7 +174,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 100/100 passing (2026-10-18).
+- [x] Full suite: 121/121 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -202,18 +203,19 @@ Progress:
 - `a800ad7` — Allow an existing account to register for an additional role
 - `2290455` — Reject archived units and properties at submission and approval
 - `2d4650c` — Add applicant withdrawal and application concurrency checks
-- Seed demo users and sample data with Bogus
+- `88f4ce3` — Seed demo users and sample data with Bogus
+- Add property and unit management through modals
 
 **Latest verified evidence**
 
-- Full suite: 100/100 passing.
+- Full suite: 121/121 passing.
+- Manual check of property and unit modals: validation re-render, list refresh, delete vs. archive, inactive unit type handling, and assigned-manager-only editing.
 - Demo seeding verified by tests and a manual login as `applicant1@demo.local`.
 - Fresh-database startup applies all migrations and creates both roles.
 - Manual check: register, log in, and log out as each role; manager receives Access Denied on applicant pages; existing account adds the second role with its password.
 
 **Still to confirm**
 
-- Property and unit management (modals, unit types, archiving).
 - Applicant unit browsing and residence-history modals.
 - Manager application list, review modal, and status history.
 - README and final review against the assessment.

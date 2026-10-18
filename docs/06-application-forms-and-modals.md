@@ -131,8 +131,11 @@ Both must be used in the application because both are explicit assessment requir
 
 In this application:
 
-- **Partials:** each application section (`_ApplicantInformationSection`, `_ResidenceHistorySection`), the Summary, the shared application list, and every modal form.
-- **View components:** `UnitTypeSelect` (queries the selectable unit types, including a unit's current inactive type) and `StatusHistory` (queries an application's transitions and resolves who made each one).
+- **Partials:** each application section (`_ApplicantInformationSection`, `_ResidenceHistorySection`), the Summary, and every modal form.
+- **View components:**
+  - `UnitTypeSelect` queries the selectable unit types, including a unit's current inactive type.
+  - `StatusHistory` queries an application's transitions and resolves who made each one.
+  - `ApplicationGrid` loads the property filter options for its scope and renders the grid that the JSON endpoint fills (see doc 10).
 
 ## Editable and Read-Only Sections
 

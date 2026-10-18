@@ -1,0 +1,60 @@
+@model PropertyManagement.Web.ViewComponents.ApplicationGridViewModel
+
+@* Shell only; application-grid.js fills the rows and pager from data-url. *@
+<div class="application-grid"
+     data-url="@Model.DataUrl"
+     data-show-applicant="@(Model.ShowApplicant ? "true" : "false")"
+     data-highlight-returned="@(Model.HighlightReturned ? "true" : "false")">
+
+    <form class="row g-2 align-items-end mb-3" data-grid-filters>
+        <div class="col-sm-4 col-md-3">
+            <label for="grid-status" class="form-label">Status</label>
+            <select id="grid-status" name="status" class="form-select">
+                @foreach (var status in Model.StatusOptions)
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-5 col-md-4">
+            <label for="grid-property" class="form-label">Property</label>
+            <select id="grid-property" name="propertyId" class="form-select">
+                <option value="">All properties</option>
+                @foreach (var property in Model.PropertyOptions)
+                {
+                    <option value="@property.Id">@property.Label</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Filter</button>
+        </div>
+    </form>
+
+    <p class="text-muted small" data-grid-summary aria-live="polite">Loading…</p>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    @if (Model.ShowApplicant)
+                    {
+                        <th><button type="button" class="btn btn-link p-0 fw-semibold" data-sort="Applicant">Applicant<span data-sort-indicator></span></button></th>
+                    }
+                    <th><button type="button" class="btn btn-link p-0 fw-semibold" data-sort="Property">Property / Unit<span data-sort-indicator></span></button></th>
+                    <th><button type="button" class="btn btn-link p-0 fw-semibold" data-sort="Status">Status<span data-sort-indicator></span></button></th>
+                    <th><button type="button" class="btn btn-link p-0 fw-semibold" data-sort="Submitted">Submitted<span data-sort-indicator></span></button></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-grid-rows></tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Application pages" data-grid-pager></nav>
+
+    <noscript>
+        <p class="text-danger">This list needs JavaScript to load.</p>
+    </noscript>
+</div>

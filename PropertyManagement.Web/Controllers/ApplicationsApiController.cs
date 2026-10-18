@@ -83,7 +83,11 @@ public class ApplicationsApiController(ApplicationListService listService)
                     a.Unit.Property.Name,
                     a.Unit.UnitNumber,
                     a.Status,
-                    a.SubmittedAtUtc,
+                    // SQL Server returns an unspecified kind; mark it UTC so
+                    // the JSON carries a "Z" and browsers convert to local time.
+                    a.SubmittedAtUtc is { } submitted
+                        ? DateTime.SpecifyKind(submitted, DateTimeKind.Utc)
+                        : null,
                     Url.Action("Details", detailsController, new { id = a.Id })!))
                 .ToList(),
             result.TotalCount,

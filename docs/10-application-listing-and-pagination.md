@@ -83,4 +83,17 @@ The count must reflect the authorized, filtered result set, not all applications
 
 ## Scope
 
-The list is server-rendered with query-string links for filters, sorting, and paging. The optional bonus (a reusable grid view component driven by a JSON endpoint documented with OpenAPI) is not implemented.
+## JSON Endpoint and Grid
+
+Both lists are the same reusable `ApplicationGrid` view component, driven by a JSON endpoint:
+
+- `GET /api/applications`: property managers; all applications.
+- `GET /api/applications/mine`: applicants; their own applications.
+
+Query parameters: `status` ("All" or a status name), `propertyId`, `sort`, `desc`, `page`, `pageSize`. The response contains the page of rows, `totalCount` (the filtered total), `pageNumber`, `pageSize`, `totalPages`, and the filters actually applied, so each role's defaults live only on the server. Each row carries its own `detailsUrl`.
+
+Unauthenticated and unauthorized API requests receive 401 and 403 rather than a redirect to the login page.
+
+The view component renders the filters and table shell; `wwwroot/js/application-grid.js` fetches every page, including the first, and mirrors the applied state into the page URL so refresh and back keep the view.
+
+The endpoints are documented with OpenAPI at `/openapi/v1.json`, with Swagger UI at `/swagger` (Development only).

@@ -38,7 +38,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Sign-up with role choice creates the Identity user, role, and profile atomically. Evidence: `RegistrationServiceTests`.
 - [x] An existing account can add the other role by re-registering with its password. Evidence: `RegistrationServiceTests`; manual check.
 - [x] Login and logout. Evidence: manual check, 2026-10-18.
-- [x] Applicant pages require the Applicant role. Evidence: manual check (manager receives Access Denied).
+- [x] Pages require their role; a signed-in user who reaches another role's page is sent to their own main page with a notice, and the API returns 403. Evidence: manual check.
 - [x] Verify role and profile provisioning for newly registered users.
 - [x] Verify role and profile provisioning for seeded users. Evidence: manual login as `applicant1@demo.local`.
 - [x] Every controller requires its role (`Applicant` or `PropertyManager`); services enforce ownership and property assignment. Reviewed endpoint by endpoint.
@@ -181,7 +181,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 149/149 passing (2026-10-18).
+- [x] Full suite: 155/155 passing (2026-10-18).
 - [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
 - [x] Clean build from the solution root with no warnings.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -197,6 +197,14 @@ Progress:
 - [x] Seeding re-verified against a dropped and recreated development database.
 - [x] Final review against the assessment; the read-only section partial gap was found and fixed.
 - [?] Final Git status and commit review.
+
+## 13. Bonus 1: paging, sorting, and reusable grid
+
+- [x] Paging and sorting performed in the database. Evidence: `ApplicationListServiceTests`.
+- [x] JSON endpoint returning the page of rows and the filtered total (`GET /api/applications`, `GET /api/applications/mine`), with role defaults applied and echoed by the server. Evidence: `ApplicationsApiTests`.
+- [x] API requests receive 401/403 instead of login redirects. Evidence: `GetAll_Anonymous_Returns401InsteadOfRedirect`, `GetAll_Applicant_Returns403`.
+- [x] Documented with OpenAPI (`/openapi/v1.json`, Swagger UI at `/swagger`). Evidence: `OpenApiDocument_DescribesBothEndpoints`; manual check.
+- [x] Both lists extracted into the reusable `ApplicationGrid` view component, which renders every page from the JSON endpoint (`application-grid.js`). Evidence: manual check (JSON requests in the network tab, no page reloads, state kept on refresh).
 
 ---
 

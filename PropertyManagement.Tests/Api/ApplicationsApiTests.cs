@@ -69,6 +69,7 @@ public class ApplicationsApiTests(WebAppFactory factory)
 
         Assert.Equal(scenario.Application.Id, row.GetProperty("id").GetInt32());
         Assert.Equal("Submitted", row.GetProperty("status").GetString());
+        Assert.EndsWith("Z", row.GetProperty("submittedAtUtc").GetString());
         Assert.Equal(
             $"/ManageApplications/Details/{scenario.Application.Id}",
             row.GetProperty("detailsUrl").GetString());

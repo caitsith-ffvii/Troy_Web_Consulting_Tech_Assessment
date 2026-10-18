@@ -87,6 +87,11 @@ To start over with fresh demo data, drop the `TroyPropertyManagement` database a
 - See the manager's comment when an application is returned or denied, correct and resubmit returned applications, and withdraw open applications.
 - "My applications" list with filtering, sorting, and paging.
 
+**Application grid and API**
+
+- Both application lists are one reusable `ApplicationGrid` view component whose rows come from a JSON endpoint (`GET /api/applications` for managers, `GET /api/applications/mine` for applicants) returning the page of rows and the filtered total. Filtering, sorting, and paging run in the database.
+- API documentation: OpenAPI document at `/openapi/v1.json` and Swagger UI at `/swagger` (Development). Log in through the app first; the API uses the same sign-in.
+
 **Property managers**
 
 - Add, edit, and remove properties and units through modals. Removing deletes a record that nothing references and archives it otherwise, preserving its history. Inactive unit types stay on existing units but cannot be newly selected (enforced on the server).

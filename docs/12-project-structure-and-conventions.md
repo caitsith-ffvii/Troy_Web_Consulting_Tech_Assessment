@@ -14,7 +14,7 @@ Troy_Web_Consulting_Assessment.slnx
 │   ├── Entities/                    # Domain entities, ApplicationUser
 │   └── Identity/                    # Role names
 ├── PropertyManagement.Web/
-│   ├── Controllers/                 # MVC controllers
+│   ├── Controllers/                 # MVC controllers and the JSON API controller
 │   ├── Services/                    # Business operations and their result types
 │   ├── Data/
 │   │   ├── ApplicationDbContext.cs
@@ -22,14 +22,15 @@ Troy_Web_Consulting_Assessment.slnx
 │   │   ├── DemoDataSeeder.cs        # Bogus demo data
 │   │   └── Configurations/          # Fluent API entity configurations
 │   ├── Migrations/                  # EF Core code-first migrations
-│   ├── ViewComponents/              # UnitTypeSelect, StatusHistory
+│   ├── ViewComponents/              # UnitTypeSelect, StatusHistory, ApplicationGrid
 │   ├── ViewModels/                  # Per-feature view models
 │   ├── Views/                       # Conventional Razor view locations
-│   └── wwwroot/                     # Static assets, including the modal script
+│   └── wwwroot/                     # Static assets, including the modal and grid scripts
 └── PropertyManagement.Tests/
     ├── Entities/                    # Domain unit tests
     ├── Services/                    # SQL Server-backed service tests
     ├── ViewModels/                  # View-model mapping and validation tests
+    ├── Api/                         # HTTP tests for the JSON endpoint
     └── Infrastructure/              # Test database and scenario helpers
 ```
 

@@ -98,6 +98,13 @@ public class AccountController(
         return RedirectToAction("Index", "Home");
     }
 
+    // A signed-in user reached a page their role can't open (for example, a
+    // login redirect back to another role's page). Send them to their own
+    // main page instead of an error. API requests get a 403 in Program.cs.
     [HttpGet]
-    public IActionResult AccessDenied() => View();
+    public IActionResult AccessDenied()
+    {
+        TempData["Notice"] = "That page isn't available for your account.";
+        return RedirectToAction("Index", "Home");
+    }
 }

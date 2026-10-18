@@ -52,6 +52,13 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+            @if (TempData["Notice"] is string notice)
+            {
+                <div class="alert alert-info alert-dismissible" role="status">
+                    @notice
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
             @RenderBody()
         </main>
     </div>
@@ -64,6 +71,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/application-grid.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

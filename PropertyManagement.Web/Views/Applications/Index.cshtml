@@ -1,5 +1,3 @@
-@model PropertyManagement.Web.ViewModels.RentalApplications.ApplicationListViewModel
-
 @{
     ViewData["Title"] = "My applications";
 }
@@ -9,4 +7,4 @@
     <a class="btn btn-primary" asp-controller="AvailableUnits" asp-action="Index">Browse available units</a>
 </div>
 
-<partial name="_ApplicationList" model="Model" />
+@await Component.InvokeAsync("ApplicationGrid", new { scope = PropertyManagement.Web.ViewComponents.ApplicationGridScope.Applicant })

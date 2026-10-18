@@ -93,7 +93,7 @@ A rejected transition does not create a successful status-history record. Separa
 - A lease belongs to a specific unit.
 - Historical leases are preserved.
 - Lease records capture the agreed monthly rent.
-- Approval and lease creation are coordinated by `ApplicationService` initially.
+- Approval and lease creation are coordinated by `RentalApplicationService`.
 - Approval must atomically update the application status, create the lease, and record status history.
 - The service checks for an active lease.
 - A persistence-level concurrency safeguard is required to prevent conflicting active leases while allowing historical leases.

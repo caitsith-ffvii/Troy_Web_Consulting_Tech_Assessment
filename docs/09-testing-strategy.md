@@ -72,7 +72,10 @@ The active-lease rule must hold even when two approval operations race.
 
 A suitable integration test should attempt conflicting operations and verify that the database ends in a valid state with no conflicting active leases.
 
-The exact concurrency mechanism and test implementation remain to be determined during implementation.
+Two tests cover this:
+
+- **Concurrent approvals:** two applications for the same unit are approved at the same time through separate `DbContext` instances; exactly one lease is created.
+- **Approve versus withdraw:** the manager's context loads the application, the applicant withdraws it through another context, and the manager's approval of the now-stale copy is rejected by the row version with no lease created. This forces the race deterministically rather than relying on timing.
 
 ## Test Scope
 

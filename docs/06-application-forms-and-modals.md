@@ -88,9 +88,18 @@ If a delete operation fails, the UI must accurately reflect the persisted state.
 
 ## Modal Forms
 
-Property, unit, and residence-history management operations use modal forms where required by the assessment.
+Modal forms are used for:
 
-The modal is populated using a partial view returned from a controller action.
+- Adding, editing, and removing properties and units.
+- Adding, editing, and removing residence-history entries.
+- Reviewing an application (Approve, Return, or Deny).
+- Withdrawing an application.
+
+The modal is populated using a partial view returned from a controller action. The modal shell (`_Modal`) is rendered outside the application's Continue/Back form, so modal forms are never nested inside it.
+
+`wwwroot/js/site.js` handles every modal the same way: a trigger's `data-modal-url` loads the partial, and the form posts with `fetch`. The controller returns the partial again when it needs re-rendering, or `204 No Content` on success.
+
+Remove confirmations state in advance whether the record will be deleted or archived.
 
 ### Validation Failure
 
@@ -110,9 +119,7 @@ After a successful operation:
 - The modal closes.
 - The relevant UI is refreshed.
 
-For the assessment, refreshing the affected list or section is sufficient. Updating individual DOM elements manually is optional complexity, not a requirement.
-
-A full-page refresh is acceptable where it is the simplest reliable choice, but refreshing only the affected list is preferable for the modal workflows.
+A trigger's `data-refresh-target` names the list to reload from its `data-refresh-url` (the property list or the residence-history table). Triggers without a target, such as review and withdrawal, reload the whole page because the status, history, and available actions all change.
 
 ## Partials and View Components
 
@@ -121,6 +128,17 @@ Use partial views for reusable markup and form sections, including modal content
 Use view components for reusable UI that needs its own server-side logic to obtain or prepare the data it displays.
 
 Both must be used in the application because both are explicit assessment requirements. Their use should have a clear purpose rather than introducing them into every view indiscriminately.
+
+In this application:
+
+- **Partials:** each application section (`_ApplicantInformationSection`, `_ResidenceHistorySection`), the Summary, the shared application list, and every modal form.
+- **View components:** `UnitTypeSelect` (queries the selectable unit types, including a unit's current inactive type) and `StatusHistory` (queries an application's transitions and resolves who made each one).
+
+## Editable and Read-Only Sections
+
+Each section partial renders editable inputs or read-only values based on the view model's `IsReadOnly`, which the server sets from the application's status. The Summary is composed of the same two partials in read-only mode, and it is reused on the property manager's application page.
+
+Locked applications open on the Summary. When an application is Returned or Denied, the applicant sees the manager's latest comment at the top of the page.
 
 ## Security
 

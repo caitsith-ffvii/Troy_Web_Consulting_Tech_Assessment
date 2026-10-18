@@ -103,7 +103,12 @@ Where records represent important business history, preserve them and use entity
 
 Do not assume every entity with a foreign key must be archived in every circumstance. Evaluate deletion based on the entity's business significance and its dependent records.
 
-Exact delete and archive rules should be documented for each entity as they are finalized.
+Delete and archive rules:
+
+- Relationships to historical records (applications, leases, status history, snapshots, residence entries, units) use restricted deletes, so nothing cascades away.
+- Removing a property or unit permanently deletes it only when no application or lease references it; otherwise it is archived. Archiving a property does not archive its units.
+- Residence-history entries are permanently deleted while their application is Draft or Returned.
+- Unit types are deactivated, never deleted.
 
 ## Database Constraints
 
@@ -117,7 +122,13 @@ Examples include:
 - Appropriate indexes for common query and relationship patterns.
 - A persistence-level safeguard against overlapping active leases for a unit.
 
-The precise SQL Server implementation of the active-lease concurrency safeguard remains an implementation detail to determine during development.
+Implemented constraints:
+
+- Unique unit number per property, and unique unit type names.
+- Check constraints: lease end date not before start date, positive agreed rent, positive unit rent, and unit bedrooms between 0 and 20.
+- A `rowversion` column on rental applications for optimistic concurrency.
+
+The active-lease safeguard is a unit-row update lock taken inside the approval transaction (see doc 04), because overlapping date ranges cannot be expressed as a simple unique constraint.
 
 ## Entity-to-View-Model Mapping
 

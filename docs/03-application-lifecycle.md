@@ -81,7 +81,17 @@ Each section has its own view model and partial or view component, as required b
 - The server reloads authoritative application data and validates ownership, current status, completeness, and eligibility.
 - The server rejects submission if the property or unit is archived.
 - The server does not trust read-only values or workflow state supplied by the browser.
-- Successful submission changes the status from `Draft` or `Returned` to `Submitted` and records the transition in status history.
+- Successful submission changes the status from `Draft` or `Returned` to `Submitted`, records the transition in status history, and sets `SubmittedAtUtc` to the time of this submission.
+
+## Starting an Application
+
+- Applicants start an application from the list of available units: units that are not archived, whose property is not archived, and that have no lease covering today.
+- A draft cannot be created for an archived unit or property, or for a unit with an active lease.
+- Applying again for a unit where the applicant already has a Draft, Submitted, or Returned application resumes that application instead of creating a duplicate. After an application is Approved, Denied, or Withdrawn, applying again creates a new one.
+
+## Review Outcomes Visible to Applicants
+
+When an application is Returned or Denied, the applicant sees the manager's latest comment and its date at the top of the application page. The manager's identity is not shown. The applicant's list marks Returned applications as needing action. Property managers see the full status history.
 
 ## Application Data and Editing
 

@@ -88,7 +88,7 @@ The workflow therefore needs both:
 - An application-level availability check for clear user feedback.
 - A persistence-level concurrency safeguard that prevents two active leases for the same unit.
 
-A database-enforced uniqueness rule or an appropriate locking/concurrency strategy may be used. The specific SQL Server/EF Core implementation remains open.
+The safeguard is a lock: inside the approval transaction, the service selects the unit row `WITH (UPDLOCK, HOLDLOCK)` before checking for overlapping leases. A second approval for the same unit waits until the first commits or rolls back, then sees its lease and is rejected.
 
 If one request wins and the competing request loses:
 
@@ -108,9 +108,11 @@ For the current assessment:
 - Do not implement a property-assignment history model without a requirement.
 - Choose a concurrency safeguard that actually enforces the one-active-lease invariant rather than implementing multiple overlapping strategies without need.
 
-## Open Implementation Decisions
+## Implementation
 
-- Which SQL Server/EF Core mechanism will enforce the one-active-lease invariant?
-- How will the application service ensure its writes participate in one transaction?
-- How will concurrency conflicts be translated into a user-facing result?
-- Will expected business-rule failures use a shared result type or a workflow-specific result type?
+- **One-active-lease invariant:** the unit-row update lock described above, plus an overlapping-lease check against persisted leases.
+- **Single transaction:** `ChangeStatusAsync` opens one transaction, and the status change, lease, and status-history record are saved with one `SaveChangesAsync` before commit. Any early return disposes the uncommitted transaction, rolling it back.
+- **Lease term:** start and end dates are inclusive UTC calendar dates. A lease starts on the approval date and ends the day before its 12-month anniversary, so a new lease can start on the anniversary.
+- **Concurrency conflicts:** `RentalApplication.RowVersion` makes a write based on stale data (for example, approving an application the applicant has just withdrawn) fail; the service returns "This application was changed by someone else. Reload and try again."
+- **Result types:** status operations share `ChangeApplicationStatusResult` (success or an error message); registration, property, and unit operations have their own result types with field-specific errors.
+- **Who may review:** only the property's assigned manager, only for Submitted applications, and only with the outcomes Approve, Return, or Deny. Return and Deny require a comment.

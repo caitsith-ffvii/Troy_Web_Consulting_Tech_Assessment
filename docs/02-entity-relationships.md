@@ -81,7 +81,7 @@ Applications and leases are separate concepts with separate lifecycles.
 
 A unit is unavailable when a lease's term covers the current date. Availability is derived from lease records rather than stored as an independently editable `IsAvailable` field.
 
-The database must protect the invariant that a unit cannot have more than one active lease, including when concurrent approval requests race. The specific SQL Server/EF Core constraint or locking strategy remains an implementation decision.
+The database must protect the invariant that a unit cannot have more than one active lease, including when concurrent approval requests race. Approval enforces this by locking the unit row inside its transaction before checking for overlapping leases (see doc 04).
 
 ## RentalApplication and Residence History
 

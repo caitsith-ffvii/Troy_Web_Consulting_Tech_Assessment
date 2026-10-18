@@ -23,9 +23,9 @@ For property managers:
 - Default page size: 20 applications.
 - The property filter offers all properties.
 
-Managers can change the status filter to view other statuses.
+Managers can change the status filter to view other statuses, including All.
 
-The default page size can be adjusted after the UI is implemented and reviewed.
+For applicants ("My applications"): all statuses, most recently submitted first, filtered to properties they have applied to.
 
 ## Filtering
 
@@ -37,16 +37,16 @@ Filtering must be performed in SQL Server, not after loading all applications in
 
 Sorting uses a defined set of supported fields rather than arbitrary client-provided field names or expressions.
 
-Potential supported fields include:
+Supported fields, each in either direction:
 
-- Submission date.
-- Applicant name.
-- Property.
+- Submission date (`SubmittedAtUtc`).
+- Applicant name (last name, then first name, from the application snapshot).
+- Property (property name, then unit number).
 - Application status.
 
-The final list of supported fields should be confirmed against the implemented UI and requirements.
+An unrecognized sort value falls back to submission date.
 
-The default order is oldest submission first, supporting a review queue where earlier submissions remain visible for processing.
+The default order is oldest submission first, supporting a review queue where earlier submissions remain visible for processing. `SubmittedAtUtc` records the most recent submission, so a returned application that is resubmitted rejoins the queue at the back.
 
 The requested sort field and direction must be validated. Add a deterministic secondary sort key, such as the application ID, so records with equal primary sort values have a stable order.
 
@@ -66,7 +66,7 @@ The service performs filtering, sorting, counting, and pagination in the databas
 
 The controller maps the returned entities into the appropriate view model. The view model exposes the pagination information needed by the UI without making the service depend on MVC.
 
-The initial default page size is 20. Page size and page number must be validated, with sensible defaults and bounds.
+The default page size is 20, bounded to 1–100. A page number beyond the last page returns the last page.
 
 ## Query Order
 
@@ -83,4 +83,4 @@ The count must reflect the authorized, filtered result set, not all applications
 
 ## Scope
 
-The exact set of sort fields and the final UI behavior can be refined when the application list is implemented and viewed live.
+The list is server-rendered with query-string links for filters, sorting, and paging. The optional bonus (a reusable grid view component driven by a JSON endpoint documented with OpenAPI) is not implemented.

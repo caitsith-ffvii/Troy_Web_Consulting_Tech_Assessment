@@ -862,7 +862,7 @@ public class RentalApplicationServiceTests
     }
     
     [Fact]
-    public async Task SaveApplicantInformationAsync_OwnDraft_UpdatesInformation()
+    public async Task SaveApplicantInformationAsync_OwnDraft_UpdatesInformationAndMarksSectionComplete()
     {
         var database = new SqlServerTestDatabase();
         await database.InitializeAsync();
@@ -873,6 +873,7 @@ public class RentalApplicationServiceTests
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
         scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
         await context.SaveChangesAsync();
 
         var service = new RentalApplicationService(context);
@@ -891,15 +892,18 @@ public class RentalApplicationServiceTests
 
         Assert.True(result.Succeeded);
 
-        var savedInformation = await context.ApplicantInformationSnapshots
-            .SingleAsync(i =>
-                i.RentalApplicationId == scenario.Application.Id);
+        context.ChangeTracker.Clear();
 
-        Assert.Equal("Updated", savedInformation.FirstName);
-        Assert.Equal("Applicant", savedInformation.LastName);
-        Assert.Equal("555-0100", savedInformation.PhoneNumber);
-        Assert.Equal("updated@example.com", savedInformation.Email);
-        Assert.Equal("123 New Street", savedInformation.CurrentAddress);
+        var savedApplication = await context.RentalApplications
+            .Include(a => a.ApplicantInformation)
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.True(savedApplication.ApplicantInformationCompleted);
+        Assert.Equal("Updated", savedApplication.ApplicantInformation.FirstName);
+        Assert.Equal("Applicant", savedApplication.ApplicantInformation.LastName);
+        Assert.Equal("555-0100", savedApplication.ApplicantInformation.PhoneNumber);
+        Assert.Equal("updated@example.com", savedApplication.ApplicantInformation.Email);
+        Assert.Equal("123 New Street", savedApplication.ApplicantInformation.CurrentAddress);
     }
 
     [Fact]
@@ -1227,6 +1231,53 @@ public class RentalApplicationServiceTests
     }
 
     [Fact]
+    public async Task SaveApplicantInformationAsync_MissingRequiredField_RejectsWithoutSaving()
+    {
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = false;
+        await context.SaveChangesAsync();
+
+        var originalFirstName =
+            scenario.Application.ApplicantInformation.FirstName;
+
+        var service = new RentalApplicationService(context);
+
+        var result = await service.SaveApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            new ApplicantInformationSnapshot
+            {
+                FirstName = "",
+                LastName = "Applicant",
+                PhoneNumber = "555-0100",
+                Email = "updated@example.com",
+                CurrentAddress = "123 New Street"
+            });
+
+        Assert.False(result.Succeeded);
+        Assert.NotNull(result.Error);
+
+        context.ChangeTracker.Clear();
+
+        var savedApplication = await context.RentalApplications
+            .Include(a => a.ApplicantInformation)
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.False(savedApplication.ApplicantInformationCompleted);
+        Assert.Equal(
+            originalFirstName,
+            savedApplication.ApplicantInformation.FirstName);
+    }
+
+    [Fact]
     public async Task RemoveResidenceHistoryAsync_OwnDraft_RemovesEntry()
     {
         var database = new SqlServerTestDatabase();
@@ -1397,80 +1448,6 @@ public class RentalApplicationServiceTests
     }
 
     [Fact]
-    public async Task CompleteApplicantInformationAsync_OwnDraft_MarksSectionComplete()
-    {
-        var database = new SqlServerTestDatabase();
-        await database.InitializeAsync();
-
-        await using var context = database.CreateContext();
-
-        var scenario =
-            await SubmittedApplicationScenarioFactory.CreateAsync(context);
-
-        scenario.Application.Status = RentalApplicationStatus.Draft;
-        scenario.Application.ApplicantInformationCompleted = false;
-        await context.SaveChangesAsync();
-
-        var service = new RentalApplicationService(context);
-
-        var result = await service.CompleteApplicantInformationAsync(
-            scenario.Application.Id,
-            scenario.ApplicantUser.Id);
-
-        Assert.True(result.Succeeded);
-        Assert.True(scenario.Application.ApplicantInformationCompleted);
-    }
-
-    [Fact]
-    public async Task CompleteApplicantInformationAsync_DifferentApplicant_RejectsCompletion()
-    {
-        var database = new SqlServerTestDatabase();
-        await database.InitializeAsync();
-
-        await using var context = database.CreateContext();
-
-        var scenario =
-            await SubmittedApplicationScenarioFactory.CreateAsync(context);
-
-        scenario.Application.Status = RentalApplicationStatus.Draft;
-        scenario.Application.ApplicantInformationCompleted = false;
-        await context.SaveChangesAsync();
-
-        var service = new RentalApplicationService(context);
-
-        var result = await service.CompleteApplicantInformationAsync(
-            scenario.Application.Id,
-            Guid.NewGuid().ToString());
-
-        Assert.False(result.Succeeded);
-        Assert.False(scenario.Application.ApplicantInformationCompleted);
-    }
-
-    [Fact]
-    public async Task CompleteApplicantInformationAsync_SubmittedApplication_RejectsCompletion()
-    {
-        var database = new SqlServerTestDatabase();
-        await database.InitializeAsync();
-
-        await using var context = database.CreateContext();
-
-        var scenario =
-            await SubmittedApplicationScenarioFactory.CreateAsync(context);
-
-        scenario.Application.ApplicantInformationCompleted = false;
-        await context.SaveChangesAsync();
-
-        var service = new RentalApplicationService(context);
-
-        var result = await service.CompleteApplicantInformationAsync(
-            scenario.Application.Id,
-            scenario.ApplicantUser.Id);
-
-        Assert.False(result.Succeeded);
-        Assert.False(scenario.Application.ApplicantInformationCompleted);
-    }
-
-    [Fact]
     public async Task CompleteResidenceHistoryAsync_OwnDraft_MarksSectionComplete()
     {
         var database = new SqlServerTestDatabase();
@@ -1544,38 +1521,7 @@ public class RentalApplicationServiceTests
         Assert.False(scenario.Application.ResidenceHistoryCompleted);
     }
     
-    [Fact]
-    public async Task CompleteApplicantInformationAsync_MissingRequiredField_RejectsCompletion()
-    {
-        var database = new SqlServerTestDatabase();
-        await database.InitializeAsync();
-
-        await using var context = database.CreateContext();
-
-        var scenario =
-            await SubmittedApplicationScenarioFactory.CreateAsync(context);
-
-        scenario.Application.Status = RentalApplicationStatus.Draft;
-        scenario.Application.ApplicantInformationCompleted = false;
-
-        await context.Entry(scenario.Application)
-            .Reference(a => a.ApplicantInformation)
-            .LoadAsync();
-
-        scenario.Application.ApplicantInformation.FirstName = "";
-
-        await context.SaveChangesAsync();
-
-        var service = new RentalApplicationService(context);
-
-        var result = await service.CompleteApplicantInformationAsync(
-            scenario.Application.Id,
-            scenario.ApplicantUser.Id);
-
-        Assert.False(result.Succeeded);
-        Assert.False(scenario.Application.ApplicantInformationCompleted);
-    }
-
+    
     [Fact]
     public async Task CompleteResidenceHistoryAsync_MoveOutBeforeMoveIn_RejectsCompletion()
     {

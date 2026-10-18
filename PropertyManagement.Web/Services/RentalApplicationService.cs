@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using PropertyManagement.Domain.Entities;
 using PropertyManagement.Web.Data;
@@ -82,6 +81,8 @@ public class RentalApplicationService(ApplicationDbContext context)
         string applicantUserId,
         ApplicantInformationSnapshot information)
     {
+        ArgumentNullException.ThrowIfNull(information);
+
         var result = await GetEditableApplicationAsync(
             applicationId,
             applicantUserId);
@@ -89,6 +90,16 @@ public class RentalApplicationService(ApplicationDbContext context)
         if (!result.Succeeded)
         {
             return ChangeApplicationStatusResult.Failure(result.Error!);
+        }
+
+        if (string.IsNullOrWhiteSpace(information.FirstName) ||
+            string.IsNullOrWhiteSpace(information.LastName) ||
+            string.IsNullOrWhiteSpace(information.PhoneNumber) ||
+            string.IsNullOrWhiteSpace(information.Email) ||
+            string.IsNullOrWhiteSpace(information.CurrentAddress))
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "All applicant information fields are required.");
         }
 
         var application = result.Application!;
@@ -102,6 +113,7 @@ public class RentalApplicationService(ApplicationDbContext context)
         application.ApplicantInformation.PhoneNumber = information.PhoneNumber;
         application.ApplicantInformation.Email = information.Email;
         application.ApplicantInformation.CurrentAddress = information.CurrentAddress;
+        application.ApplicantInformationCompleted = true;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
@@ -180,7 +192,7 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         return ChangeApplicationStatusResult.Success();
     }
-    
+
     public async Task<ChangeApplicationStatusResult> RemoveResidenceHistoryAsync(
         int applicationId,
         string applicantUserId,
@@ -207,47 +219,7 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         context.ResidenceHistoryEntries.Remove(entry);
-
         result.Application!.UpdatedAtUtc = DateTime.UtcNow;
-
-        await context.SaveChangesAsync();
-
-        return ChangeApplicationStatusResult.Success();
-    }
-    
-    public async Task<ChangeApplicationStatusResult> CompleteApplicantInformationAsync(
-        int applicationId,
-        string applicantUserId)
-    {
-        var result = await GetEditableApplicationAsync(
-            applicationId,
-            applicantUserId);
-
-        if (!result.Succeeded)
-        {
-            return ChangeApplicationStatusResult.Failure(result.Error!);
-        }
-
-        var application = result.Application!;
-
-        await context.Entry(application)
-            .Reference(a => a.ApplicantInformation)
-            .LoadAsync();
-
-        var information = application.ApplicantInformation;
-
-        if (string.IsNullOrWhiteSpace(information.FirstName) ||
-            string.IsNullOrWhiteSpace(information.LastName) ||
-            string.IsNullOrWhiteSpace(information.PhoneNumber) ||
-            string.IsNullOrWhiteSpace(information.Email) ||
-            string.IsNullOrWhiteSpace(information.CurrentAddress))
-        {
-            return ChangeApplicationStatusResult.Failure(
-                "All applicant information fields are required.");
-        }
-
-        application.ApplicantInformationCompleted = true;
-        application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
 
@@ -370,7 +342,6 @@ public class RentalApplicationService(ApplicationDbContext context)
         return ChangeApplicationStatusResult.Success();
     }
 
-
     public async Task<ChangeApplicationStatusResult> ChangeStatusAsync(
         int applicationId,
         string changedByUserId,
@@ -404,8 +375,8 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         if ((newStatus is RentalApplicationStatus.Returned
-                or RentalApplicationStatus.Denied)
-            && string.IsNullOrWhiteSpace(comment))
+                or RentalApplicationStatus.Denied) &&
+            string.IsNullOrWhiteSpace(comment))
         {
             return ChangeApplicationStatusResult.Failure(
                 "A comment is required when returning or denying an application.");
@@ -484,9 +455,8 @@ public class RentalApplicationService(ApplicationDbContext context)
         await transaction.CommitAsync();
 
         return ChangeApplicationStatusResult.Success();
-        }
+    }
 
-        
     private async Task<EditableApplicationResult> GetEditableApplicationAsync(
         int applicationId,
         string applicantUserId)
@@ -529,7 +499,6 @@ public sealed record ChangeApplicationStatusResult(
         new(false, error);
 }
 
-
 public sealed record CreateDraftApplicationResult(
     bool Succeeded,
     RentalApplication? Application,
@@ -556,4 +525,3 @@ public sealed record EditableApplicationResult(
     public static EditableApplicationResult Failure(string error) =>
         new(null, error);
 }
-

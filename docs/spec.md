@@ -52,7 +52,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [ ] All managers can view all properties and units; only assigned managers can edit them.
 - [?] Unit type lookup and inactive-type handling.
 - [?] Archive behavior preserves historical applications and leases.
-- [?] Archived units/properties cannot be used for new applications or leases.
+- [x] Archived units/properties cannot be used for new applications or leases. Evidence: `UnitOrPropertyArchived` tests.
 - [?] Verify property/unit validation and database constraints.
 
 ## 4. Rental application lifecycle
@@ -68,7 +68,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Submission rejects applications in invalid statuses.
 - [x] Submission checks whether the unit has a currently active lease.
 - [?] Verify duplicate draft/application behavior against the original requirements.
-- [?] Verify archived-property/unit and other invalid-state checks at submission time.
+- [x] Submission rejects archived units and properties.
 - [?] Verify concurrent submission, withdrawal, and status changes cannot produce invalid state.
 
 ## 5. Applicant information wizard
@@ -172,7 +172,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 82/82 passing (2026-10-18).
+- [x] Full suite: 86/86 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -198,11 +198,12 @@ Progress:
 - `7ebb25b` — Add registration service with role-based profiles
 - `e5cebde` — Add database initializer with role seeding
 - `8965825` — Add account registration, login, and logout
-- Allow an existing account to register for an additional role
+- `a800ad7` — Allow an existing account to register for an additional role
+- Reject archived units and properties at submission and approval
 
 **Latest verified evidence**
 
-- Full suite: 82/82 passing.
+- Full suite: 86/86 passing.
 - Fresh-database startup applies all migrations and creates both roles.
 - Manual check: register, log in, and log out as each role; manager receives Access Denied on applicant pages; existing account adds the second role with its password.
 

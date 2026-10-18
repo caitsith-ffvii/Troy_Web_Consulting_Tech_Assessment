@@ -804,6 +804,102 @@ public class RentalApplicationServiceTests
             scenario.Application.Status);
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task SubmitAsync_UnitOrPropertyArchived_RejectsSubmissionWithoutChanges(
+        bool unitArchived,
+        bool propertyArchived)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ApplicantInformationCompleted = true;
+        scenario.Application.ResidenceHistoryCompleted = true;
+        scenario.Unit.IsArchived = unitArchived;
+        scenario.Unit.Property.IsArchived = propertyArchived;
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.SubmitAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.False(result.Succeeded);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Draft,
+            unchangedApplication.Status);
+
+        Assert.False(await context.ApplicationStatusHistories
+            .AnyAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task ChangeStatusAsync_ApproveWhenUnitOrPropertyArchived_RejectsWithoutLease(
+        bool unitArchived,
+        bool propertyArchived)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Unit.IsArchived = unitArchived;
+        scenario.Unit.Property.IsArchived = propertyArchived;
+
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Approved,
+            comment: null);
+
+        // Assert
+        Assert.False(result.Succeeded);
+
+        var unchangedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            RentalApplicationStatus.Submitted,
+            unchangedApplication.Status);
+
+        Assert.False(await context.Leases
+            .AnyAsync(l => l.UnitId == scenario.Unit.Id));
+
+        Assert.False(await context.ApplicationStatusHistories
+            .AnyAsync(h =>
+                h.RentalApplicationId == scenario.Application.Id));
+    }
+
     [Fact]
     public async Task SubmitAsync_AnotherApplicant_SubmissionIsRejected()
     {

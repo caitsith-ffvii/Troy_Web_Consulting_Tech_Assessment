@@ -299,6 +299,7 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         var application = await context.RentalApplications
             .Include(a => a.Unit)
+                .ThenInclude(u => u.Property)
             .SingleOrDefaultAsync(a => a.Id == applicationId);
 
         if (application is null)
@@ -316,6 +317,12 @@ public class RentalApplicationService(ApplicationDbContext context)
         {
             return ChangeApplicationStatusResult.Failure(
                 "You are not authorized to submit this application.");
+        }
+
+        if (application.Unit.IsArchived || application.Unit.Property.IsArchived)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                "Applications for archived units or properties cannot be submitted.");
         }
 
         if (!application.ApplicantInformationCompleted ||
@@ -380,6 +387,7 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         var application = await context.RentalApplications
             .Include(a => a.Unit)
+                .ThenInclude(u => u.Property)
             .SingleOrDefaultAsync(a => a.Id == applicationId);
 
         if (application is null)
@@ -417,6 +425,13 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         if (newStatus == RentalApplicationStatus.Approved)
         {
+            if (application.Unit.IsArchived ||
+                application.Unit.Property.IsArchived)
+            {
+                return ChangeApplicationStatusResult.Failure(
+                    "Archived units or properties cannot receive a new lease.");
+            }
+
             // Serialize approval attempts targeting the same unit.
             // SQL Server holds this update lock until the transaction ends.
             var lockedUnitIds = await context.Units

@@ -3,39 +3,27 @@
 <h2>Residence History</h2>
 
 <p>
-    Review your previous residences. You can have zero or more entries.
-    Residence entry add/edit/remove forms will be added as modal workflows.
+    List your previous residences. This section is optional; you can continue with no entries.
 </p>
 
-@if (Model.ResidenceHistory.Count == 0)
+@if (!Model.IsReadOnly)
 {
-    <p>No previous residences have been added.</p>
+    @* type="button" so it never submits the surrounding Continue/Back form. *@
+    <button type="button"
+            class="btn btn-outline-primary mb-3"
+            data-modal-url="@Url.Action("AddResidence", "Applications", new { id = Model.ApplicationId })"
+            data-refresh-target="#residence-history-list">
+        Add residence
+    </button>
 }
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Address</th>
-                <th>Landlord</th>
-                <th>Landlord Phone</th>
-                <th>Move In</th>
-                <th>Move Out</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var residence in Model.ResidenceHistory)
-            {
-                <tr>
-                    <td>@residence.Address</td>
-                    <td>@residence.LandlordName</td>
-                    <td>@residence.LandlordPhoneNumber</td>
-                    <td>@residence.MoveInDate.ToShortDateString()</td>
-                    <td>
-                        @(residence.MoveOutDate?.ToShortDateString() ?? "Current")
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+
+<div id="residence-history-list"
+     data-refresh-url="@Url.Action("ResidenceHistory", "Applications", new { id = Model.ApplicationId })">
+    <partial name="_ResidenceHistoryList"
+             model="new PropertyManagement.Web.ViewModels.RentalApplications.ResidenceHistoryListViewModel
+             {
+                 ApplicationId = Model.ApplicationId,
+                 IsReadOnly = Model.IsReadOnly,
+                 Entries = Model.ResidenceHistory
+             }" />
+</div>

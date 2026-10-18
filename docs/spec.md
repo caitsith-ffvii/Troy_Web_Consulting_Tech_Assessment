@@ -102,10 +102,10 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Application ownership and editable-status checks are enforced by the service.
 - [x] Residence History section extracted into a partial view.
 - [x] Summary section extracted into a partial view.
-- [?] Verify modal add/edit/remove behavior, including invalid POSTs.
-- [?] Verify failed modal submissions preserve entered values and validation errors.
-- [?] Verify modal forms are not nested inside the main navigation form.
-- [?] Verify read-only applications cannot change residence history through forged requests.
+- [x] Residence add/edit/remove through modals, including invalid POSTs. Evidence: manual check.
+- [x] Failed modal submissions re-render the partial with entered values and field errors (dates validated by `ResidenceHistoryEntryViewModel`). Evidence: `ResidenceHistoryEntryViewModelTests`; manual check.
+- [x] Modal forms are not nested inside the main navigation form (`_Modal` is rendered outside it).
+- [x] Read-only applications cannot change residence history through forged requests: controller actions require an owned Draft/Returned application, and the service rejects locked statuses. Evidence: `*_SubmittedApplication_Rejects*` service tests.
 
 ## 7. Status workflow and history
 
@@ -176,7 +176,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 127/127 passing (2026-10-18).
+- [x] Full suite: 130/130 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -207,11 +207,13 @@ Progress:
 - `2d4650c` — Add applicant withdrawal and application concurrency checks
 - `88f4ce3` — Seed demo users and sample data with Bogus
 - `5661c95` — Add property and unit management through modals
-- Add applicant unit browsing and resume open applications
+- `dedc52d` — Add applicant unit browsing and resume open applications
+- Add residence history modals
 
 **Latest verified evidence**
 
-- Full suite: 127/127 passing.
+- Full suite: 130/130 passing.
+- Manual check: residence modals add/edit/remove, date validation in place, list refresh without reload, read-only applications show no residence actions.
 - Manual check: available units list, Apply opens a new draft, applying again resumes it, readable step label, link back to available units.
 - Manual check of property and unit modals: validation re-render, list refresh, delete vs. archive, inactive unit type handling, and assigned-manager-only editing.
 - Demo seeding verified by tests and a manual login as `applicant1@demo.local`.
@@ -220,7 +222,6 @@ Progress:
 
 **Still to confirm**
 
-- Residence-history modals.
 - Manager application list, review modal, and status history.
 - README and final review against the assessment.
 

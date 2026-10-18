@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PropertyManagement.Domain.Entities;
 using PropertyManagement.Domain.Identity;
 using PropertyManagement.Web.Services;
+using PropertyManagement.Web.ViewModels.Properties;
 using PropertyManagement.Web.ViewModels.RentalApplications;
 
 namespace PropertyManagement.Web.Controllers;
@@ -287,6 +288,192 @@ public class ApplicationsController(
             nameof(Details),
             new { id = result.Application!.Id });
     }
+
+    // Residence history modals. Each action returns its partial when it
+    // needs re-rendering and 204 No Content on success, which closes the
+    // modal and refreshes #residence-history-list.
+
+    [HttpGet]
+    public async Task<IActionResult> ResidenceHistory(int id)
+    {
+        var application = await applicationService.FindApplicantApplicationAsync(
+            id,
+            CurrentUserId);
+
+        if (application is null)
+        {
+            return NotFound();
+        }
+
+        var viewModel = viewModelFactory.Create(
+            application,
+            RentalApplicationSection.ResidenceHistory,
+            !IsEditableStatus(application.Status));
+
+        return PartialView("_ResidenceHistoryList", new ResidenceHistoryListViewModel
+        {
+            ApplicationId = id,
+            IsReadOnly = viewModel.IsReadOnly,
+            Entries = viewModel.ResidenceHistory
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AddResidence(int id)
+    {
+        if (await FindEditableApplicationAsync(id) is null)
+        {
+            return NotFound();
+        }
+
+        return ResidenceForm(id, new ResidenceHistoryEntryViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddResidence(
+        int id,
+        ResidenceHistoryEntryViewModel model)
+    {
+        model.Id = 0;
+
+        if (!ModelState.IsValid)
+        {
+            return ResidenceForm(id, model);
+        }
+
+        var result = await applicationService.AddResidenceHistoryAsync(
+            id,
+            CurrentUserId,
+            ToEntry(model));
+
+        return HandleResidenceResult(result, id, model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditResidence(int id, int entryId)
+    {
+        var application = await FindEditableApplicationAsync(id);
+        var entry = application?.ResidenceHistory.SingleOrDefault(e => e.Id == entryId);
+
+        if (entry is null)
+        {
+            return NotFound();
+        }
+
+        return ResidenceForm(id, new ResidenceHistoryEntryViewModel
+        {
+            Id = entry.Id,
+            Address = entry.Address,
+            LandlordName = entry.LandlordName,
+            LandlordPhoneNumber = entry.LandlordPhoneNumber,
+            MoveInDate = entry.MoveInDate,
+            MoveOutDate = entry.MoveOutDate
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditResidence(
+        int id,
+        int entryId,
+        ResidenceHistoryEntryViewModel model)
+    {
+        model.Id = entryId;
+
+        if (!ModelState.IsValid)
+        {
+            return ResidenceForm(id, model);
+        }
+
+        var result = await applicationService.UpdateResidenceHistoryAsync(
+            id,
+            CurrentUserId,
+            entryId,
+            ToEntry(model));
+
+        return HandleResidenceResult(result, id, model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> RemoveResidence(int id, int entryId)
+    {
+        var application = await FindEditableApplicationAsync(id);
+        var entry = application?.ResidenceHistory.SingleOrDefault(e => e.Id == entryId);
+
+        if (entry is null)
+        {
+            return NotFound();
+        }
+
+        return PartialView("_RemoveConfirm", new RemoveConfirmViewModel
+        {
+            Title = "Remove residence",
+            Message = $"Remove {entry.Address} from your residence history?",
+            ActionUrl = Url.Action(nameof(RemoveResidence), new { id, entryId })!
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [ActionName(nameof(RemoveResidence))]
+    public async Task<IActionResult> RemoveResidenceConfirmed(int id, int entryId)
+    {
+        var result = await applicationService.RemoveResidenceHistoryAsync(
+            id,
+            CurrentUserId,
+            entryId);
+
+        return result.Succeeded ? NoContent() : NotFound();
+    }
+
+    private string CurrentUserId =>
+        User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+    // Ownership and editable status come from the database, never the form.
+    private async Task<RentalApplication?> FindEditableApplicationAsync(int id)
+    {
+        var application = await applicationService.FindApplicantApplicationAsync(
+            id,
+            CurrentUserId);
+
+        return application is not null && IsEditableStatus(application.Status)
+            ? application
+            : null;
+    }
+
+    private PartialViewResult ResidenceForm(
+        int applicationId,
+        ResidenceHistoryEntryViewModel model)
+    {
+        ViewData["ApplicationId"] = applicationId;
+        return PartialView("_ResidenceForm", model);
+    }
+
+    private IActionResult HandleResidenceResult(
+        ChangeApplicationStatusResult result,
+        int applicationId,
+        ResidenceHistoryEntryViewModel model)
+    {
+        if (result.Succeeded)
+        {
+            return NoContent();
+        }
+
+        ModelState.AddModelError(string.Empty, result.Error!);
+        return ResidenceForm(applicationId, model);
+    }
+
+    private static ResidenceHistoryEntry ToEntry(
+        ResidenceHistoryEntryViewModel model) =>
+        new()
+        {
+            Address = model.Address.Trim(),
+            LandlordName = model.LandlordName.Trim(),
+            LandlordPhoneNumber = model.LandlordPhoneNumber.Trim(),
+            MoveInDate = model.MoveInDate.Date,
+            MoveOutDate = model.MoveOutDate?.Date
+        };
 
     private static bool IsEditableStatus(RentalApplicationStatus status) =>
         status is RentalApplicationStatus.Draft or RentalApplicationStatus.Returned;

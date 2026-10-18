@@ -1,0 +1,55 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.ResidenceHistoryListViewModel
+
+@if (Model.Entries.Count == 0)
+{
+    <p>No previous residences have been added.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Landlord</th>
+                    <th>Landlord Phone</th>
+                    <th>Move In</th>
+                    <th>Move Out</th>
+                    @if (!Model.IsReadOnly)
+                    {
+                        <th></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var residence in Model.Entries.OrderByDescending(e => e.MoveInDate))
+                {
+                    <tr>
+                        <td>@residence.Address</td>
+                        <td>@residence.LandlordName</td>
+                        <td>@residence.LandlordPhoneNumber</td>
+                        <td>@residence.MoveInDate.ToShortDateString()</td>
+                        <td>@(residence.MoveOutDate?.ToShortDateString() ?? "Current")</td>
+                        @if (!Model.IsReadOnly)
+                        {
+                            <td class="text-end text-nowrap">
+                                <button type="button"
+                                        class="btn btn-sm btn-link"
+                                        data-modal-url="@Url.Action("EditResidence", "Applications", new { id = Model.ApplicationId, entryId = residence.Id })"
+                                        data-refresh-target="#residence-history-list">
+                                    Edit
+                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-link text-danger"
+                                        data-modal-url="@Url.Action("RemoveResidence", "Applications", new { id = Model.ApplicationId, entryId = residence.Id })"
+                                        data-refresh-target="#residence-history-list">
+                                    Remove
+                                </button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

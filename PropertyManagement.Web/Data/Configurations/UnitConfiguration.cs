@@ -15,6 +15,9 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
             .IsRequired()
             .HasMaxLength(50);
 
+        builder.Property(u => u.Bedrooms)
+            .IsRequired();
+
         builder.Property(u => u.MonthlyRent)
             .HasPrecision(18, 2)
             .IsRequired();

@@ -54,7 +54,7 @@ public static class SubmittedApplicationScenarioFactory
 
         var property = new Property
         {
-            PropertyManager = manager,
+            PropertyManagers = new List<PropertyManager> { manager },
             Name = $"Test Property {suffix}",
             Address = "200 Property Street",
             IsArchived = false

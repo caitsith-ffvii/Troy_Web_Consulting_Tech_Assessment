@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PropertyManagement.Domain.Entities;
@@ -21,11 +22,8 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         builder.Property(p => p.IsArchived)
             .IsRequired();
 
-        builder.HasIndex(p => p.PropertyManagerId);
-
-        builder.HasOne(p => p.PropertyManager)
-            .WithMany()
-            .HasForeignKey(p => p.PropertyManagerId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(p => p.PropertyManagers)
+            .WithMany(pm => pm.Properties)
+            .UsingEntity(join => join.ToTable("PropertyManagerAssignments"));
     }
 }

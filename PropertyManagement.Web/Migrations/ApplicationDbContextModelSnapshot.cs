@@ -331,12 +331,7 @@ namespace PropertyManagement.Web.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<int>("PropertyManagerId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("PropertyManagerId");
 
                     b.ToTable("Properties");
                 });
@@ -445,6 +440,9 @@ namespace PropertyManagement.Web.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Bedrooms")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
@@ -563,6 +561,21 @@ namespace PropertyManagement.Web.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("PropertyPropertyManager", b =>
+                {
+                    b.Property<int>("PropertiesId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PropertyManagersId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PropertiesId", "PropertyManagersId");
+
+                    b.HasIndex("PropertyManagersId");
+
+                    b.ToTable("PropertyManagerAssignments", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -672,17 +685,6 @@ namespace PropertyManagement.Web.Migrations
                     b.Navigation("Unit");
                 });
 
-            modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>
-                {
-                    b.HasOne("PropertyManagement.Domain.Entities.PropertyManager", "PropertyManager")
-                        .WithMany()
-                        .HasForeignKey("PropertyManagerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PropertyManager");
-                });
-
             modelBuilder.Entity("PropertyManagement.Domain.Entities.PropertyManager", b =>
                 {
                     b.HasOne("PropertyManagement.Domain.Identity.ApplicationUser", "User")
@@ -741,6 +743,21 @@ namespace PropertyManagement.Web.Migrations
                     b.Navigation("Property");
 
                     b.Navigation("UnitType");
+                });
+
+            modelBuilder.Entity("PropertyPropertyManager", b =>
+                {
+                    b.HasOne("PropertyManagement.Domain.Entities.Property", null)
+                        .WithMany()
+                        .HasForeignKey("PropertiesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManagement.Domain.Entities.PropertyManager", null)
+                        .WithMany()
+                        .HasForeignKey("PropertyManagersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>

@@ -42,7 +42,7 @@ ASP.NET Identity roles govern which categories of actions the account may perfor
 
 No active-role dropdown is planned. Authorization depends on the requested action. The server resolves the appropriate domain profile from the authenticated account rather than trusting a profile ID supplied by the browser.
 
-Whether both profiles are created at registration or when a role is granted remains undecided.
+Registration creates the profile for the chosen role. Registering again with an existing email and that account's password adds the other role and its profile.
 
 ## Applicant and RentalApplication
 

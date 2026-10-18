@@ -67,7 +67,7 @@ public class RegistrationServiceTests
     }
 
     [Fact]
-    public async Task RegisterAsync_DuplicateEmail_RejectsWithoutCreatingProfile()
+    public async Task RegisterAsync_ExistingUserSameRole_RejectsWithoutCreatingProfile()
     {
         // Arrange
         var (context, service, _) = await CreateAsync();
@@ -81,11 +81,69 @@ public class RegistrationServiceTests
 
         // Assert
         Assert.False(result.Succeeded);
-        Assert.NotEmpty(result.Errors);
+        Assert.Contains(result.Errors, e => e.Field == "Role");
         Assert.Equal(1, await context.Users
             .CountAsync(u => u.Email == email));
         Assert.Equal(1, await context.Applicants
             .CountAsync(a => a.User.Email == email));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ExistingApplicantAddsManagerRoleWithCorrectPassword_AddsRoleAndProfile()
+    {
+        // Arrange
+        var (context, service, userManager) = await CreateAsync();
+        var email = UniqueEmail();
+
+        await service.RegisterAsync(ApplicantRequest(email));
+        context.ChangeTracker.Clear();
+
+        // Act
+        var result = await service.RegisterAsync(
+            ApplicantRequest(email) with { Role = Roles.PropertyManager });
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, await context.Users
+            .CountAsync(u => u.Email == email));
+
+        var user = await userManager.FindByEmailAsync(email);
+        Assert.NotNull(user);
+        Assert.True(await userManager.IsInRoleAsync(user, Roles.Applicant));
+        Assert.True(await userManager.IsInRoleAsync(user, Roles.PropertyManager));
+        Assert.True(await context.Applicants
+            .AnyAsync(a => a.UserId == user.Id));
+        Assert.True(await context.PropertyManagers
+            .AnyAsync(m => m.UserId == user.Id));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ExistingUserWrongPassword_RejectsWithoutAddingRole()
+    {
+        // Arrange
+        var (context, service, userManager) = await CreateAsync();
+        var email = UniqueEmail();
+
+        await service.RegisterAsync(ApplicantRequest(email));
+        context.ChangeTracker.Clear();
+
+        // Act
+        var result = await service.RegisterAsync(
+            ApplicantRequest(email) with
+            {
+                Role = Roles.PropertyManager,
+                Password = "Wr0ngPassword!"
+            });
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, e => e.Field == "Email");
+
+        var user = await userManager.FindByEmailAsync(email);
+        Assert.NotNull(user);
+        Assert.False(await userManager.IsInRoleAsync(user, Roles.PropertyManager));
+        Assert.False(await context.PropertyManagers
+            .AnyAsync(m => m.UserId == user.Id));
     }
 
     [Fact]

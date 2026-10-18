@@ -35,9 +35,14 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Applicant-scoped application lookup.
 - [x] Applicant edit operations verify ownership.
 - [x] Manager status changes verify assigned property ownership.
+- [x] Sign-up with role choice creates the Identity user, role, and profile atomically. Evidence: `RegistrationServiceTests`.
+- [x] An existing account can add the other role by re-registering with its password. Evidence: `RegistrationServiceTests`; manual check.
+- [x] Login and logout. Evidence: manual check, 2026-10-18.
+- [x] Applicant pages require the Applicant role. Evidence: manual check (manager receives Access Denied).
+- [x] Verify role and profile provisioning for newly registered users.
+- [?] Verify role and profile provisioning for seeded users.
 - [?] Verify every applicant and manager endpoint enforces the correct authorization.
 - [?] Verify unauthorized access does not disclose another user's application data.
-- [?] Verify role and profile provisioning for seeded and newly registered users.
 
 ## 3. Properties and units
 
@@ -148,7 +153,8 @@ Progress:
 
 ## 10. Seeding and startup
 
-- [?] Idempotent startup database migration.
+- [x] Idempotent startup database migration. Evidence: `DatabaseInitializer`; `InitializeAsync_RunTwice_CreatesEachRoleOnce`; manual fresh-database startup.
+- [x] Seed Identity roles idempotently.
 - [?] Seed lookup/reference data.
 - [?] Seed demo users, roles, and profiles.
 - [?] Seed properties, units, applications, status histories, residence entries, and leases.
@@ -166,7 +172,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [?] Re-run and record the full test-suite result after the latest commits.
+- [x] Full suite: 82/82 passing (2026-10-18).
 - [?] Review missing negative cases and authorization boundaries.
 - [?] Verify clean build from the solution root.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -188,20 +194,25 @@ Progress:
 
 **Latest known commits**
 
-- `8db9ca0` — Invalidate residence history completion on changes
-- `9d13ad1` — Refactor application details into sections
+- `f760948` — Assign one property manager per property
+- `7ebb25b` — Add registration service with role-based profiles
+- `e5cebde` — Add database initializer with role seeding
+- `8965825` — Add account registration, login, and logout
+- Allow an existing account to register for an additional role
 
 **Latest verified evidence**
 
-- Focused residence-history completion tests passed.
-- Concurrent approval test passed 10 consecutive runs.
-- The UI refactor was staged with a clean `git diff --cached --check` before commit.
+- Full suite: 82/82 passing.
+- Fresh-database startup applies all migrations and creates both roles.
+- Manual check: register, log in, and log out as each role; manager receives Access Denied on applicant pages; existing account adds the second role with its password.
 
 **Still to confirm**
 
-- Full test-suite result after the latest commits.
-- Current working-tree cleanliness.
-- Which manager, property/unit, seeding, and documentation requirements are already implemented.
+- Property and unit management (modals, unit types, archiving).
+- Applicant unit browsing and residence-history modals.
+- Manager application list, review modal, and status history.
+- Demo data seeding with Bogus.
+- README and final review against the assessment.
 
 ## Working protocol
 

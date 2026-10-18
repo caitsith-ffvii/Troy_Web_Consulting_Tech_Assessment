@@ -19,6 +19,13 @@ public class RegistrationService(
             return RegistrationResult.Failure(errors);
         }
 
+        var existingUser = await userManager.FindByEmailAsync(request.Email);
+
+        if (existingUser is not null)
+        {
+            return await AddRoleToExistingUserAsync(existingUser, request);
+        }
+
         // Account, role, and profile succeed or fail together; disposing an
         // uncommitted transaction rolls it back.
         await using var transaction =
@@ -44,6 +51,62 @@ public class RegistrationService(
             return RegistrationResult.Failure(ToErrors(roleAdded));
         }
 
+        AddProfile(user, request);
+
+        await context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return RegistrationResult.Success(user);
+    }
+
+    // An existing account can take on the other role, but only by proving it
+    // owns the account; otherwise anyone could attach a role to someone's email.
+    private async Task<RegistrationResult> AddRoleToExistingUserAsync(
+        ApplicationUser user,
+        RegistrationRequest request)
+    {
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            return RegistrationResult.Failure(
+            [
+                new RegistrationError(
+                    "Email",
+                    "This email is already registered. Enter that account's password to add a role.")
+            ]);
+        }
+
+        if (await userManager.IsInRoleAsync(user, request.Role))
+        {
+            return RegistrationResult.Failure(
+            [
+                new RegistrationError(
+                    "Role",
+                    "This account is already registered with that role.")
+            ]);
+        }
+
+        await using var transaction =
+            await context.Database.BeginTransactionAsync();
+
+        var roleAdded = await userManager.AddToRoleAsync(user, request.Role);
+
+        if (!roleAdded.Succeeded)
+        {
+            return RegistrationResult.Failure(ToErrors(roleAdded));
+        }
+
+        AddProfile(user, request);
+
+        await context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return RegistrationResult.Success(user);
+    }
+
+    private void AddProfile(
+        ApplicationUser user,
+        RegistrationRequest request)
+    {
         if (request.Role == Roles.Applicant)
         {
             context.Applicants.Add(new Applicant
@@ -62,11 +125,6 @@ public class RegistrationService(
                 UserId = user.Id
             });
         }
-
-        await context.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        return RegistrationResult.Success(user);
     }
 
     private static List<RegistrationError> Validate(

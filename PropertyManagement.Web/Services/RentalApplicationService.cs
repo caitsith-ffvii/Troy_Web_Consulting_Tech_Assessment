@@ -64,6 +64,19 @@ public class RentalApplicationService(ApplicationDbContext context)
         return CreateDraftApplicationResult.Success(application);
     }
 
+    public async Task<RentalApplication?> FindApplicantApplicationAsync(
+        int applicationId,
+        string applicantUserId)
+    {
+        return await context.RentalApplications
+            .Include(application => application.ApplicantInformation)
+            .Include(application => application.ResidenceHistory)
+            .Where(application =>
+                application.Id == applicationId &&
+                application.Applicant.UserId == applicantUserId)
+            .SingleOrDefaultAsync();
+    }
+
     public async Task<ChangeApplicationStatusResult> SaveApplicantInformationAsync(
         int applicationId,
         string applicantUserId,

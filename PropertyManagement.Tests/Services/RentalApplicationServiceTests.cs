@@ -1636,4 +1636,79 @@ public class RentalApplicationServiceTests
         Assert.True(result.Succeeded);
         Assert.True(scenario.Application.ResidenceHistoryCompleted);
     }
+
+    [Fact]
+    public async Task FindApplicantApplicationAsync_ApplicationBelongsToApplicant_ReturnsApplication()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.FindApplicantApplicationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(scenario.Application.Id, result.Id);
+        Assert.Equal(
+            "Test",
+            result.ApplicantInformation.FirstName);
+        Assert.NotNull(result.ResidenceHistory);
+    }
+
+    [Fact]
+    public async Task FindApplicantApplicationAsync_ApplicationDoesNotExist_ReturnsNull()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.FindApplicantApplicationAsync(
+            int.MaxValue,
+            "some-applicant-user");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task FindApplicantApplicationAsync_ApplicationBelongsToAnotherApplicant_ReturnsNull()
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        context.ChangeTracker.Clear();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.FindApplicantApplicationAsync(
+            scenario.Application.Id,
+            "another-applicant-user");
+
+        // Assert
+        Assert.Null(result);
+    }
 }

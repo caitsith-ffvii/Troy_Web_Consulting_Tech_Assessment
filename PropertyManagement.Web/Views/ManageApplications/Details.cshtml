@@ -41,6 +41,11 @@
 
 @await Component.InvokeAsync("StatusHistory", new { applicationId = Model.Application.ApplicationId })
 
+@if (Model.ShowNotes)
+{
+    <partial name="_NotesSection" model="Model.Notes" />
+}
+
 <partial name="_Modal" />
 
 @section Scripts {

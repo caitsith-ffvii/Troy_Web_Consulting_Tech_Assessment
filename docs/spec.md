@@ -181,7 +181,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 155/155 passing (2026-10-18).
+- [x] Full suite: 168/168 passing (2026-10-18).
 - [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
 - [x] Clean build from the solution root with no warnings.
 - [?] Verify no unintended tracked or untracked changes remain.
@@ -205,6 +205,14 @@ Progress:
 - [x] API requests receive 401/403 instead of login redirects. Evidence: `GetAll_Anonymous_Returns401InsteadOfRedirect`, `GetAll_Applicant_Returns403`.
 - [x] Documented with OpenAPI (`/openapi/v1.json`, Swagger UI at `/swagger`). Evidence: `OpenApiDocument_DescribesBothEndpoints`; manual check.
 - [x] Both lists extracted into the reusable `ApplicationGrid` view component, which renders every page from the JSON endpoint (`application-grid.js`). Evidence: manual check (JSON requests in the network tab, no page reloads, state kept on refresh).
+
+## 14. Bonus 3: property manager notes
+
+- [x] Managers create, view, and edit notes on applications through modals. Any manager can add notes and read them all, and only the author can edit. Evidence: `ApplicationNoteServiceTests`.
+- [x] Manual check of the notes section, modals, and author-only editing.
+- [x] Notes are never rendered to applicants. Evidence: `ApplicantApplicationPage_DoesNotRenderNotes`.
+- [x] Notes are never returned to applicants. Evidence: `ApplicantJsonApi_DoesNotReturnNotes`, `ApplicantNotesEndpoint_IsForbidden`.
+- [x] A manager who is the application's applicant cannot read or add its notes. Evidence: `ManagerWhoIsTheApplicant_CannotAddOrReadNotes`.
 
 ---
 

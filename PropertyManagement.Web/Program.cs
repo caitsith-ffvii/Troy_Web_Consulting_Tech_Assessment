@@ -25,6 +25,7 @@ builder.Services.AddScoped<RegistrationService>();
 builder.Services.AddScoped<PropertyService>();
 builder.Services.AddScoped<UnitService>();
 builder.Services.AddScoped<ApplicationListService>();
+builder.Services.AddScoped<ApplicationNoteService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddTransient<RentalApplicationViewModelFactory>();
 

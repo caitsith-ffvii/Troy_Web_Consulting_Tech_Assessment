@@ -239,6 +239,41 @@ namespace PropertyManagement.Web.Migrations
                     b.ToTable("ApplicantInformationSnapshots");
                 });
 
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.ApplicationNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RentalApplicationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorUserId");
+
+                    b.HasIndex("RentalApplicationId");
+
+                    b.ToTable("ApplicationNotes");
+                });
+
             modelBuilder.Entity("PropertyManagement.Domain.Entities.ApplicationStatusHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -654,6 +689,23 @@ namespace PropertyManagement.Web.Migrations
                     b.HasOne("PropertyManagement.Domain.Entities.RentalApplication", "RentalApplication")
                         .WithOne("ApplicantInformation")
                         .HasForeignKey("PropertyManagement.Domain.Entities.ApplicantInformationSnapshot", "RentalApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RentalApplication");
+                });
+
+            modelBuilder.Entity("PropertyManagement.Domain.Entities.ApplicationNote", b =>
+                {
+                    b.HasOne("PropertyManagement.Domain.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManagement.Domain.Entities.RentalApplication", "RentalApplication")
+                        .WithMany()
+                        .HasForeignKey("RentalApplicationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

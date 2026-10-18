@@ -1,0 +1,17 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.NotesListViewModel
+
+@* Rendered only on manager pages, and only when the service allows access. *@
+<div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+    <h2 class="h4 mb-0">Notes <span class="text-muted fs-6">(managers only)</span></h2>
+    <button type="button"
+            class="btn btn-sm btn-outline-primary"
+            data-modal-url="@Url.Action("AddNote", new { id = Model.ApplicationId })"
+            data-refresh-target="#application-notes">
+        Add note
+    </button>
+</div>
+
+<div id="application-notes"
+     data-refresh-url="@Url.Action("Notes", new { id = Model.ApplicationId })">
+    <partial name="_NotesList" model="Model" />
+</div>

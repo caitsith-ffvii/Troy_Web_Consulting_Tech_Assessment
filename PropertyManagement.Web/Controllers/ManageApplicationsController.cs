@@ -12,6 +12,7 @@ namespace PropertyManagement.Web.Controllers;
 [Authorize(Roles = Roles.PropertyManager)]
 public class ManageApplicationsController(
     RentalApplicationService applicationService,
+    ApplicationNoteService noteService,
     RentalApplicationViewModelFactory viewModelFactory)
     : Controller
 {
@@ -28,6 +29,9 @@ public class ManageApplicationsController(
             return NotFound();
         }
 
+        // Null when this manager is the application's applicant.
+        var notes = await noteService.GetNotesAsync(id, CurrentUserId);
+
         return View(new ManagerApplicationDetailsViewModel
         {
             Application = viewModelFactory.Create(
@@ -39,8 +43,122 @@ public class ManageApplicationsController(
             MonthlyRent = application.Unit.MonthlyRent,
             AssignedManagerEmail =
                 application.Unit.Property.PropertyManager.User.Email ?? string.Empty,
-            CanReview = CanReview(application)
+            CanReview = CanReview(application),
+            ShowNotes = notes is not null,
+            Notes = new NotesListViewModel
+            {
+                ApplicationId = id,
+                Notes = notes ?? []
+            }
         });
+    }
+
+    // Notes. Same modal conventions as the review: the partial when it needs
+    // re-rendering, 204 on success, then the notes list refreshes. The
+    // service re-checks access on every call.
+
+    [HttpGet]
+    public async Task<IActionResult> Notes(int id)
+    {
+        var notes = await noteService.GetNotesAsync(id, CurrentUserId);
+
+        if (notes is null)
+        {
+            return NotFound();
+        }
+
+        return PartialView("_NotesList", new NotesListViewModel
+        {
+            ApplicationId = id,
+            Notes = notes
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> AddNote(int id)
+    {
+        if (!await noteService.CanViewNotesAsync(id, CurrentUserId))
+        {
+            return NotFound();
+        }
+
+        return PartialView("_NoteForm", new NoteFormViewModel { ApplicationId = id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddNote(int id, NoteFormViewModel model)
+    {
+        model.ApplicationId = id;
+        model.NoteId = null;
+
+        if (!ModelState.IsValid)
+        {
+            return PartialView("_NoteForm", model);
+        }
+
+        var result = await noteService.AddAsync(id, CurrentUserId, model.Body);
+
+        return HandleNoteResult(result, model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditNote(int id, int noteId)
+    {
+        var note = await noteService.FindOwnNoteAsync(id, noteId, CurrentUserId);
+
+        if (note is null)
+        {
+            return NotFound();
+        }
+
+        return PartialView("_NoteForm", new NoteFormViewModel
+        {
+            ApplicationId = id,
+            NoteId = noteId,
+            Body = note.Body
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditNote(
+        int id,
+        int noteId,
+        NoteFormViewModel model)
+    {
+        model.ApplicationId = id;
+        model.NoteId = noteId;
+
+        if (!ModelState.IsValid)
+        {
+            return PartialView("_NoteForm", model);
+        }
+
+        var result = await noteService.UpdateAsync(
+            id,
+            noteId,
+            CurrentUserId,
+            model.Body);
+
+        return HandleNoteResult(result, model);
+    }
+
+    private IActionResult HandleNoteResult(
+        NoteResult result,
+        NoteFormViewModel model)
+    {
+        if (result.Succeeded)
+        {
+            return NoContent();
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(error.Field ?? string.Empty, error.Message);
+        }
+
+        return PartialView("_NoteForm", model);
     }
 
     [HttpGet]

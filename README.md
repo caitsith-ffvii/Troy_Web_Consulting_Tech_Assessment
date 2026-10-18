@@ -87,6 +87,8 @@ To start over with fresh demo data, drop the `TroyPropertyManagement` database a
 - See the manager's comment when an application is returned or denied, correct and resubmit returned applications, and withdraw open applications.
 - "My applications" list with filtering, sorting, and paging.
 
+- Internal notes on applications. Any manager can add notes and read them all; only a note's author can edit it. Notes are never shown or returned to applicants, including a manager who is the applicant on that application.
+
 **Application grid and API**
 
 - Both application lists are one reusable `ApplicationGrid` view component whose rows come from a JSON endpoint (`GET /api/applications` for managers, `GET /api/applications/mine` for applicants) returning the page of rows and the filtered total. Filtering, sorting, and paging run in the database.

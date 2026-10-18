@@ -1,0 +1,34 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.NotesListViewModel
+
+@if (Model.Notes.Count == 0)
+{
+    <p class="text-muted">No notes yet.</p>
+}
+
+@foreach (var note in Model.Notes)
+{
+    <div class="card mb-2">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="small text-muted">
+                    @note.AuthorEmail · @note.CreatedAtUtc.ToLocalTime().ToString("g")
+                    @if (note.UpdatedAtUtc > note.CreatedAtUtc)
+                    {
+                        <span>· edited @note.UpdatedAtUtc.ToLocalTime().ToString("g")</span>
+                    }
+                </div>
+
+                @if (note.CanEdit)
+                {
+                    <button type="button"
+                            class="btn btn-sm btn-link p-0"
+                            data-modal-url="@Url.Action("EditNote", "ManageApplications", new { id = Model.ApplicationId, noteId = note.Id })"
+                            data-refresh-target="#application-notes">
+                        Edit
+                    </button>
+                }
+            </div>
+            <p class="mb-0 mt-1" style="white-space: pre-line">@note.Body</p>
+        </div>
+    </div>
+}

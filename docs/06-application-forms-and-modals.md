@@ -94,6 +94,7 @@ Modal forms are used for:
 - Adding, editing, and removing residence-history entries.
 - Reviewing an application (Approve, Return, or Deny).
 - Withdrawing an application.
+- Adding and editing manager notes.
 
 The modal is populated using a partial view returned from a controller action. The modal shell (`_Modal`) is rendered outside the application's Continue/Back form, so modal forms are never nested inside it.
 

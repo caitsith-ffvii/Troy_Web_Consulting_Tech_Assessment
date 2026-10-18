@@ -14,6 +14,31 @@ public class ManagerApplicationDetailsViewModel
 
     // Decided on the server: the assigned manager, on a Submitted application.
     public bool CanReview { get; set; }
+
+    // False when the viewing manager is also this application's applicant.
+    public bool ShowNotes { get; set; }
+
+    public NotesListViewModel Notes { get; set; } = new();
+}
+
+public class NoteFormViewModel
+{
+    public int ApplicationId { get; set; }
+
+    // Set when editing an existing note.
+    public int? NoteId { get; set; }
+
+    [Required(ErrorMessage = "Note text is required.")]
+    [StringLength(2000)]
+    [Display(Name = "Note")]
+    public string Body { get; set; } = string.Empty;
+}
+
+public class NotesListViewModel
+{
+    public int ApplicationId { get; set; }
+
+    public List<PropertyManagement.Web.Services.ApplicationNoteItem> Notes { get; set; } = [];
 }
 
 public enum ReviewOutcome

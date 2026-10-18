@@ -206,6 +206,10 @@ These are the current implementation directions:
 6. **Schema constraints and deletes:** restrict deletes on historical relationships; unique unit number per property; check constraints on lease dates, lease rent, unit rent, and bedrooms. Removing a property or unit deletes it when nothing references it and archives it otherwise.
 7. **Duplicate applications:** applying again for a unit with an open application resumes it.
 8. **Review comments:** applicants see the latest return or denial comment; managers see the full status history.
+9. **Manager notes:**
+   - Applications have any number of internal notes. Any property manager can add notes and read them all, but only a note's author can edit it. There is no delete.
+   - A manager never sees notes on an application they submitted themselves as an applicant.
+   - `RentalApplication` has no navigation to its notes, so applicant queries and the JSON API cannot include them. Notes are reached only through `ApplicationNoteService`, which re-checks access on every call.
 
 ## Scope Principle
 

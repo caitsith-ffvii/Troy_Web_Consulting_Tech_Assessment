@@ -114,6 +114,14 @@ Each record includes:
 
 A failed transition does not create a successful status-transition record. Auditing failed attempts is a separate concern and is not currently in scope.
 
+## ApplicationNote
+
+**Responsibility:** An internal note on an application, for property managers only.
+
+- References the application and the authoring user.
+- Stores the text, the creation time, and the last-edit time.
+- The relationship is one-way: `RentalApplication` has no notes collection, so notes cannot be loaded alongside an application on the applicant side.
+
 ## Application Services
 
 Services coordinate workflows involving multiple entities or persistence operations, including:

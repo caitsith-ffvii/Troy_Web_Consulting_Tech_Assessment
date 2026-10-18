@@ -20,6 +20,7 @@ public class ApplicationDbContext(
     public DbSet<ApplicantInformationSnapshot> ApplicantInformationSnapshots => Set<ApplicantInformationSnapshot>();
     public DbSet<ResidenceHistoryEntry> ResidenceHistoryEntries => Set<ResidenceHistoryEntry>();
     public DbSet<ApplicationStatusHistory> ApplicationStatusHistories => Set<ApplicationStatusHistory>();
+    public DbSet<ApplicationNote> ApplicationNotes => Set<ApplicationNote>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

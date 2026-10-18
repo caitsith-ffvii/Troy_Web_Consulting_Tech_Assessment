@@ -1,0 +1,101 @@
+@model RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h1>Register</h1>
+
+<form asp-action="Register" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <fieldset class="mb-3">
+        <legend class="fs-6">I am registering as</legend>
+
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="radio"
+                   asp-for="Role"
+                   value="@Roles.Applicant"
+                   id="role-applicant" />
+            <label class="form-check-label" for="role-applicant">Applicant</label>
+        </div>
+
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="radio"
+                   asp-for="Role"
+                   value="@Roles.PropertyManager"
+                   id="role-manager" />
+            <label class="form-check-label" for="role-manager">Property Manager</label>
+        </div>
+
+        <span asp-validation-for="Role" class="text-danger"></span>
+    </fieldset>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" autocomplete="username" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <div id="applicant-fields">
+        <div class="mb-3">
+            <label asp-for="FirstName" class="form-label"></label>
+            <input asp-for="FirstName" class="form-control" />
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="LastName" class="form-label"></label>
+            <input asp-for="LastName" class="form-control" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PhoneNumber" class="form-label"></label>
+            <input asp-for="PhoneNumber" class="form-control" />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CurrentAddress" class="form-label"></label>
+            <input asp-for="CurrentAddress" class="form-control" />
+            <span asp-validation-for="CurrentAddress" class="text-danger"></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+
+<p class="mt-3">
+    Already have an account? <a asp-action="Login">Log in</a>
+</p>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Show applicant-only fields only for applicants; the server enforces this regardless.
+        const applicantFields = document.getElementById('applicant-fields');
+
+        const toggleApplicantFields = () =>
+            applicantFields.hidden = !document.getElementById('role-applicant').checked;
+
+        document.querySelectorAll('input[name="Role"]')
+            .forEach(radio => radio.addEventListener('change', toggleApplicantFields));
+
+        toggleApplicantFields();
+    </script>
+}

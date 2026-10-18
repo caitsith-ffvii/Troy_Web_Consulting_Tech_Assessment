@@ -3,12 +3,13 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PropertyManagement.Domain.Entities;
+using PropertyManagement.Domain.Identity;
 using PropertyManagement.Web.Services;
 using PropertyManagement.Web.ViewModels.RentalApplications;
 
 namespace PropertyManagement.Web.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Applicant)]
 public class ApplicationsController(
     RentalApplicationService applicationService,
     RentalApplicationViewModelFactory viewModelFactory)

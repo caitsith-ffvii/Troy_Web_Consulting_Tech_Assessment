@@ -25,9 +25,32 @@ public sealed class SqlServerTestDatabase
         return new ApplicationDbContext(options);
     }
 
+    // Tests run in parallel; without this, several tests can try to create
+    // a missing test database at the same time and collide.
+    private static readonly SemaphoreSlim MigrationLock = new(1, 1);
+    private static volatile bool migrated;
+
     public async Task InitializeAsync()
     {
-        await using var context = CreateContext();
-        await context.Database.MigrateAsync();
+        if (migrated)
+        {
+            return;
+        }
+
+        await MigrationLock.WaitAsync();
+
+        try
+        {
+            if (!migrated)
+            {
+                await using var context = CreateContext();
+                await context.Database.MigrateAsync();
+                migrated = true;
+            }
+        }
+        finally
+        {
+            MigrationLock.Release();
+        }
     }
 }

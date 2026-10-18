@@ -29,7 +29,8 @@ This document captures the current domain-model decisions for the property manag
 
 - Linked to an `ApplicationUser`.
 - Associated with the properties they manage.
-- Access to a property depends on the manager-property relationship, not merely on having the `PropertyManager` role.
+- Can view all properties, units, and applications.
+- Editing a property or its units, and reviewing its applications, requires being assigned to that property, not merely having the `PropertyManager` role.
 
 ## Property
 
@@ -37,7 +38,7 @@ This document captures the current domain-model decisions for the property manag
 
 - Has identifying information such as name and address.
 - Contains units.
-- Can be associated with multiple property managers.
+- Has one assigned property manager.
 
 ## Unit
 

@@ -74,7 +74,7 @@ Seed enough related data to let a reviewer explore the required workflows, inclu
 Seed data should make it practical to demonstrate:
 
 - Applicant access to their own applications.
-- Property manager access to assigned properties.
+- Property managers viewing all properties and applications, and editing and reviewing only those assigned to them.
 - Unit availability and unavailable units.
 - Draft, Submitted, Returned, Approved, Denied, and Withdrawn application states.
 - Status history.

@@ -22,8 +22,9 @@ public class PropertyConfiguration : IEntityTypeConfiguration<Property>
         builder.Property(p => p.IsArchived)
             .IsRequired();
 
-        builder.HasMany(p => p.PropertyManagers)
+        builder.HasOne(p => p.PropertyManager)
             .WithMany(pm => pm.Properties)
-            .UsingEntity(join => join.ToTable("PropertyManagerAssignments"));
+            .HasForeignKey(p => p.PropertyManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -9,8 +9,7 @@ This document defines how application lists are queried and presented to applica
 Application queries must apply authorization scope on the server before returning records or counts.
 
 - Applicants can see only their own applications.
-- Property managers can see applications associated with properties assigned to them.
-- Managers cannot see applications for properties they are not assigned to manage.
+- Property managers can see all applications.
 - UI filters do not grant authorization.
 
 The service must enforce these rules in its query and operation logic. The controller may perform early authorization checks, but the service must not trust client-supplied identifiers as proof of access.
@@ -22,7 +21,7 @@ For property managers:
 - Default status filter: `Submitted`.
 - Default sort: oldest submission first.
 - Default page size: 20 applications.
-- Property filtering is limited to properties assigned to the current manager.
+- The property filter offers all properties.
 
 Managers can change the status filter to view other statuses.
 
@@ -31,8 +30,6 @@ The default page size can be adjusted after the UI is implemented and reviewed.
 ## Filtering
 
 The application list supports filtering by status and property, as required by the assessment.
-
-The available property-filter options for a manager should contain only properties assigned to that manager.
 
 Filtering must be performed in SQL Server, not after loading all applications into memory.
 
@@ -85,7 +82,5 @@ The logical query process is:
 The count must reflect the authorized, filtered result set, not all applications in the database.
 
 ## Scope
-
-The assessment does not require cross-property status visibility. Managers are restricted to their assigned properties. Do not add a broader visibility option without a business requirement.
 
 The exact set of sort fields and the final UI behavior can be refined when the application list is implemented and viewed live.

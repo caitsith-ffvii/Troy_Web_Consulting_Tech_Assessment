@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 using PropertyManagement.Domain.Identity;
 using PropertyManagement.Tests.Infrastructure;
 using PropertyManagement.Web.Services;
@@ -68,6 +69,54 @@ public class ApplicationNotesHttpTests(WebAppFactory factory)
 
         // Assert
         Assert.Contains(noteText, html);
+    }
+
+    // Not about notes, but uses the same host: a post to a locked
+    // (Submitted) application is rejected visibly and saves nothing.
+    [Fact]
+    public async Task Navigate_LockedApplication_Returns409WithoutSaving()
+    {
+        // Arrange
+        var (scenario, _) = await CreateScenarioWithNoteAsync();
+        var client = factory.CreateClientAs(scenario.ApplicantUser.Id, Roles.Applicant);
+
+        // Any page with a form issues an anti-forgery token for this user.
+        var formPage = await client.GetStringAsync("/AvailableUnits");
+        var token = System.Text.RegularExpressions.Regex.Match(
+            formPage,
+            "name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^\"]+)\"").Groups[1].Value;
+
+        Assert.False(string.IsNullOrEmpty(token));
+
+        // Act
+        var response = await client.PostAsync(
+            $"/Applications/Navigate/{scenario.Application.Id}",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token,
+                ["ApplicationId"] = scenario.Application.Id.ToString(),
+                ["Section"] = "ApplicantInformation",
+                ["command"] = "Continue",
+                ["ApplicantInformation.FirstName"] = "Tampered",
+                ["ApplicantInformation.LastName"] = "Applicant",
+                ["ApplicantInformation.PhoneNumber"] = "(555) 555-0100",
+                ["ApplicantInformation.Email"] = "tampered@example.com",
+                ["ApplicantInformation.CurrentAddress"] = "1 Tampered Street"
+            }));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Contains(
+            "This application can no longer be edited.",
+            await response.Content.ReadAsStringAsync());
+
+        var database = new SqlServerTestDatabase();
+        await using var context = database.CreateContext();
+
+        var snapshot = await context.ApplicantInformationSnapshots
+            .SingleAsync(s => s.RentalApplicationId == scenario.Application.Id);
+
+        Assert.Equal("Test", snapshot.FirstName);
     }
 
     private static async Task<(SubmittedApplicationScenario Scenario, string NoteText)>

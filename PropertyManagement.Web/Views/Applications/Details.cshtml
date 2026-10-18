@@ -92,6 +92,31 @@ else
                 break;
         }
 
+        @{
+            var isSummary = Model.Section ==
+                PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.Summary;
+            var canSubmit = Model.ApplicantInformationCompleted && Model.ResidenceHistoryCompleted;
+        }
+
+        @if (isSummary && !canSubmit)
+        {
+            @* Submit is offered only once both sections are saved; the server
+               enforces the same rule. *@
+            <div class="alert alert-warning mt-3 mb-0" role="status">
+                <strong>Before you can submit:</strong>
+                <ul class="mb-0">
+                    @if (!Model.ApplicantInformationCompleted)
+                    {
+                        <li>Save the Applicant Information section.</li>
+                    }
+                    @if (!Model.ResidenceHistoryCompleted)
+                    {
+                        <li>Complete the Residence History section (press Continue on it, even with no residences).</li>
+                    }
+                </ul>
+            </div>
+        }
+
         <div class="mt-3 d-flex gap-2">
             @if (Model.Section !=
                 PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.ApplicantInformation)
@@ -104,15 +129,17 @@ else
                 </button>
             }
 
-            @if (Model.Section ==
-                PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.Summary)
+            @if (isSummary)
             {
-                <button type="submit"
-                        name="command"
-                        value="Submit"
-                        class="btn btn-primary">
-                    Submit Application
-                </button>
+                @if (canSubmit)
+                {
+                    <button type="submit"
+                            name="command"
+                            value="Submit"
+                            class="btn btn-primary">
+                        Submit Application
+                    </button>
+                }
             }
             else
             {

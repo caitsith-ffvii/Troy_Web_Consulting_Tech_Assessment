@@ -86,11 +86,13 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Failed service operations preserve entered applicant information.
 - [x] Back navigation does not save posted changes.
 - [x] Submit is restricted to the Summary section.
+- [x] Submit is offered only once both sections are saved; otherwise the Summary lists what is still missing (the server enforces the same rule). Evidence: manual check.
+- [x] Posts to a locked application are rejected with 409 and a visible error, saving nothing. Evidence: `Navigate_LockedApplication_Returns409WithoutSaving`.
 - [x] Read-only applications open on Summary.
 - [x] Navigation validates the posted section, reads editability from the database, and allows Submit only from the Summary; services re-check every rule.
 - [x] UI and validation messages checked manually in each step.
 - [x] Section partials render editable or read-only from a server decision, and the Summary is composed of them in read-only mode. Evidence: `AsReadOnly_ReturnsReadOnlyCopyWithoutChangingOriginal`.
-- [?] Manual check of read-only section rendering on the Summary and manager details page.
+- [x] Manual check of read-only section rendering on the Summary and manager details page.
 
 ## 6. Residence history
 
@@ -183,10 +185,10 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 190/190 passing (2026-10-18).
+- [x] Full suite: 191/191 passing (2026-10-18).
 - [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
 - [x] Clean build from the solution root with no warnings.
-- [?] Verify no unintended tracked or untracked changes remain.
+- [x] No unintended tracked or untracked changes remain (clean working tree after the final commit).
 - [x] Main applicant and manager workflows smoke-tested manually.
 
 ## 12. Documentation and delivery
@@ -198,7 +200,7 @@ Progress:
 - [x] A fresh checkout was configured and run using only the README.
 - [x] Seeding re-verified against a dropped and recreated development database.
 - [x] Final review against the assessment; the read-only section partial gap was found and fixed.
-- [?] Final Git status and commit review.
+- [x] Final Git status and commit review.
 
 ## 13. Bonus 1: paging, sorting, and reusable grid
 
@@ -251,7 +253,6 @@ Progress:
 
 **Still to confirm**
 
-- Manual check of read-only section rendering (Summary and manager details page).
 - Push the local commits to `origin/main`.
 
 ## Working protocol

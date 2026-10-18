@@ -102,11 +102,22 @@ public class ApplicationsController(
         }
 
         // Determine editability from persisted state, never posted flags.
+        // A locked application rejects the post with a visible error.
         if (!IsEditableStatus(application.Status))
         {
-            return RedirectToAction(
-                nameof(Details),
-                new { id, from = returnFrom });
+            ModelState.Clear();
+            ModelState.AddModelError(
+                string.Empty,
+                "This application can no longer be edited.");
+
+            Response.StatusCode = StatusCodes.Status409Conflict;
+
+            return DetailsView(
+                viewModelFactory.Create(
+                    application,
+                    RentalApplicationSection.Summary,
+                    isReadOnly: true),
+                fromUnits);
         }
 
         if (!Enum.IsDefined(model.Section))

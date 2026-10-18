@@ -1,80 +1,79 @@
 @model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
 
 @{
-    ViewData["Title"] = "Rental Application";
+    ViewData["Title"] = $"Rental Application #{Model.ApplicationId}";
 }
 
-<h1>Rental Application</h1>
+<h1>Rental Application #@Model.ApplicationId</h1>
 
-<div>
-    <h2>Application #@Model.ApplicationId</h2>
+<p>Status: <strong>@Model.Status</strong></p>
 
-    <p>
-        <strong>Status:</strong> @Model.Status
-    </p>
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <p>
-        <strong>Applicant information:</strong>
-        @(Model.ApplicantInformationCompleted ? "Complete" : "Incomplete")
-    </p>
+@if (Model.IsReadOnly)
+{
+    <partial name="_SummarySection" model="Model" />
+}
+else
+{
+    <form asp-action="Navigate"
+          asp-route-id="@Model.ApplicationId"
+          method="post">
+        @Html.AntiForgeryToken()
 
-    <p>
-        <strong>Residence history:</strong>
-        @(Model.ResidenceHistoryCompleted ? "Complete" : "Incomplete")
-    </p>
-</div>
+        <input type="hidden" asp-for="ApplicationId" />
+        <input type="hidden" asp-for="Section" />
 
-<section>
-    <h2>Applicant Information</h2>
+        <div class="mb-3">
+            <strong>Step:</strong> @Model.Section
+        </div>
 
-    <dl>
-        <dt>Name</dt>
-        <dd>@Model.ApplicantInformation.FirstName @Model.ApplicantInformation.LastName</dd>
+        @switch (Model.Section)
+        {
+            case PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.ApplicantInformation:
+                <partial name="_ApplicantInformationSection" model="Model" />
+                break;
 
-        <dt>Phone</dt>
-        <dd>@Model.ApplicantInformation.PhoneNumber</dd>
+            case PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.ResidenceHistory:
+                <partial name="_ResidenceHistorySection" model="Model" />
+                break;
 
-        <dt>Email</dt>
-        <dd>@Model.ApplicantInformation.Email</dd>
+            case PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.Summary:
+                <partial name="_SummarySection" model="Model" />
+                break;
+        }
 
-        <dt>Current address</dt>
-        <dd>@Model.ApplicantInformation.CurrentAddress</dd>
-    </dl>
-</section>
+        <div class="mt-3 d-flex gap-2">
+            @if (Model.Section !=
+                PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.ApplicantInformation)
+            {
+                <button type="submit"
+                        name="command"
+                        value="Back"
+                        class="btn btn-secondary">
+                    Back
+                </button>
+            }
 
-<section>
-    <h2>Residence History</h2>
-
-    @if (Model.ResidenceHistory.Count == 0)
-    {
-        <p>No residence history has been added.</p>
-    }
-    else
-    {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Address</th>
-                    <th>Landlord</th>
-                    <th>Landlord phone</th>
-                    <th>Move-in date</th>
-                    <th>Move-out date</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var residence in Model.ResidenceHistory)
-                {
-                    <tr>
-                        <td>@residence.Address</td>
-                        <td>@residence.LandlordName</td>
-                        <td>@residence.LandlordPhoneNumber</td>
-                        <td>@residence.MoveInDate.ToShortDateString()</td>
-                        <td>
-                            @(residence.MoveOutDate?.ToShortDateString() ?? "Current residence")
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</section>
+            @if (Model.Section ==
+                PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationSection.Summary)
+            {
+                <button type="submit"
+                        name="command"
+                        value="Submit"
+                        class="btn btn-primary">
+                    Submit Application
+                </button>
+            }
+            else
+            {
+                <button type="submit"
+                        name="command"
+                        value="Continue"
+                        class="btn btn-primary">
+                    Continue
+                </button>
+            }
+        </div>
+    </form>
+}

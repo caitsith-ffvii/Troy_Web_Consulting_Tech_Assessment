@@ -32,6 +32,7 @@ public class RentalApplicationViewModelFactory
             ResidenceHistory = application.ResidenceHistory
                 .Select(entry => new ResidenceHistoryEntryViewModel
                 {
+                    Id = entry.Id,
                     Address = entry.Address,
                     LandlordName = entry.LandlordName,
                     LandlordPhoneNumber = entry.LandlordPhoneNumber,

@@ -1,0 +1,41 @@
+@model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
+
+<h2>Residence History</h2>
+
+<p>
+    Review your previous residences. You can have zero or more entries.
+    Residence entry add/edit/remove forms will be added as modal workflows.
+</p>
+
+@if (Model.ResidenceHistory.Count == 0)
+{
+    <p>No previous residences have been added.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Address</th>
+                <th>Landlord</th>
+                <th>Landlord Phone</th>
+                <th>Move In</th>
+                <th>Move Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var residence in Model.ResidenceHistory)
+            {
+                <tr>
+                    <td>@residence.Address</td>
+                    <td>@residence.LandlordName</td>
+                    <td>@residence.LandlordPhoneNumber</td>
+                    <td>@residence.MoveInDate.ToShortDateString()</td>
+                    <td>
+                        @(residence.MoveOutDate?.ToShortDateString() ?? "Current")
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

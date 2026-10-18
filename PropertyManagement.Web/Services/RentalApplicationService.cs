@@ -155,6 +155,7 @@ public class RentalApplicationService(ApplicationDbContext context)
             MoveOutDate = entry.MoveOutDate
         });
 
+        application.ResidenceHistoryCompleted = false;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
@@ -204,6 +205,7 @@ public class RentalApplicationService(ApplicationDbContext context)
         entry.MoveOutDate = updatedEntry.MoveOutDate;
 
         var application = result.Application!;
+        application.ResidenceHistoryCompleted = false;
         application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
@@ -237,7 +239,10 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         context.ResidenceHistoryEntries.Remove(entry);
-        result.Application!.UpdatedAtUtc = DateTime.UtcNow;
+
+        var application = result.Application!;
+        application.ResidenceHistoryCompleted = false;
+        application.UpdatedAtUtc = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
 
@@ -384,9 +389,10 @@ public class RentalApplicationService(ApplicationDbContext context)
         }
 
         var ownsProperty = await context.Units
-            .AnyAsync(u =>
-                u.Id == application.UnitId &&
-                u.Property.PropertyManager.UserId == changedByUserId);
+        .AnyAsync(u =>
+            u.Id == application.UnitId &&
+            u.Property.PropertyManagers.Any(
+                manager => manager.UserId == changedByUserId));
 
         if (!ownsProperty)
         {

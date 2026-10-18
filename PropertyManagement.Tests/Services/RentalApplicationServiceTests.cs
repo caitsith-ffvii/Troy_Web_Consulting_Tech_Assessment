@@ -989,6 +989,7 @@ public class RentalApplicationServiceTests
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
         scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = true;
         await context.SaveChangesAsync();
 
         var service = new RentalApplicationService(context);
@@ -1015,6 +1016,13 @@ public class RentalApplicationServiceTests
         Assert.Equal("123 Previous Street", savedEntry.Address);
         Assert.Equal("Jordan Landlord", savedEntry.LandlordName);
         Assert.Equal("555-0123", savedEntry.LandlordPhoneNumber);
+
+        context.ChangeTracker.Clear();
+
+        var savedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.False(savedApplication.ResidenceHistoryCompleted);
     }
 
     [Fact]
@@ -1270,6 +1278,7 @@ public class RentalApplicationServiceTests
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
         scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = true;
 
         var entry = new ResidenceHistoryEntry
         {
@@ -1308,6 +1317,13 @@ public class RentalApplicationServiceTests
         Assert.Equal("555-0123", savedEntry.LandlordPhoneNumber);
         Assert.Equal(new DateTime(2023, 1, 1), savedEntry.MoveInDate);
         Assert.Equal(new DateTime(2025, 1, 1), savedEntry.MoveOutDate);
+
+        context.ChangeTracker.Clear();
+
+        var savedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.False(savedApplication.ResidenceHistoryCompleted);
     }
 
     [Fact]
@@ -1463,6 +1479,7 @@ public class RentalApplicationServiceTests
             await SubmittedApplicationScenarioFactory.CreateAsync(context);
 
         scenario.Application.Status = RentalApplicationStatus.Draft;
+        scenario.Application.ResidenceHistoryCompleted = true;
 
         var entry = new ResidenceHistoryEntry
         {
@@ -1489,6 +1506,12 @@ public class RentalApplicationServiceTests
             .SingleOrDefaultAsync(e => e.Id == entry.Id);
 
         Assert.Null(savedEntry);
+        context.ChangeTracker.Clear();
+
+        var savedApplication = await context.RentalApplications
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.False(savedApplication.ResidenceHistoryCompleted);
     }
 
     [Fact]

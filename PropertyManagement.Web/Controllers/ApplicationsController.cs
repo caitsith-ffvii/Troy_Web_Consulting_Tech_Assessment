@@ -412,7 +412,7 @@ public class ApplicationsController(
             Id = entry.Id,
             Address = entry.Address,
             LandlordName = entry.LandlordName,
-            LandlordPhoneNumber = entry.LandlordPhoneNumber,
+            LandlordPhoneNumber = PhoneNumberFormat.Display(entry.LandlordPhoneNumber),
             MoveInDate = entry.MoveInDate,
             MoveOutDate = entry.MoveOutDate
         });

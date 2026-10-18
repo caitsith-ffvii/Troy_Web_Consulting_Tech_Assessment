@@ -114,7 +114,7 @@ public class RegistrationService(
                 UserId = user.Id,
                 FirstName = request.FirstName!.Trim(),
                 LastName = request.LastName!.Trim(),
-                PhoneNumber = request.PhoneNumber!.Trim(),
+                PhoneNumber = PhoneNumberFormat.Normalize(request.PhoneNumber)!,
                 CurrentAddress = request.CurrentAddress!.Trim()
             });
         }
@@ -147,6 +147,12 @@ public class RegistrationService(
             AddIfBlank(errors, request.LastName, "LastName", "Last name is required.");
             AddIfBlank(errors, request.PhoneNumber, "PhoneNumber", "Phone is required.");
             AddIfBlank(errors, request.CurrentAddress, "CurrentAddress", "Current address is required.");
+
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
+                PhoneNumberFormat.Normalize(request.PhoneNumber) is null)
+            {
+                errors.Add(new RegistrationError("PhoneNumber", PhoneNumberFormat.ErrorMessage));
+            }
         }
 
         return errors;

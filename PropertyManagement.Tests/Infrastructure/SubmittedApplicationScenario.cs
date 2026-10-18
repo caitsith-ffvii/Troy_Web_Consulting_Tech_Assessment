@@ -42,7 +42,7 @@ public static class SubmittedApplicationScenarioFactory
             User = applicantUser,
             FirstName = "Test",
             LastName = "Applicant",
-            PhoneNumber = "555-0100",
+            PhoneNumber = "(555) 555-0100",
             CurrentAddress = "100 Applicant Street"
         };
 

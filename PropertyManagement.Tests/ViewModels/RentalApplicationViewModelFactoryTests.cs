@@ -39,7 +39,7 @@ public class RentalApplicationViewModelFactoryTests
         {
             FirstName = "Jordan",
             LastName = "Taylor",
-            PhoneNumber = "555-0100",
+            PhoneNumber = "(555) 555-0100",
             Email = "jordan@example.com",
             CurrentAddress = "123 Main Street"
         };
@@ -56,7 +56,7 @@ public class RentalApplicationViewModelFactoryTests
         Assert.NotNull(result.ApplicantInformation);
         Assert.Equal("Jordan", result.ApplicantInformation.FirstName);
         Assert.Equal("Taylor", result.ApplicantInformation.LastName);
-        Assert.Equal("555-0100", result.ApplicantInformation.PhoneNumber);
+        Assert.Equal("(555) 555-0100", result.ApplicantInformation.PhoneNumber);
         Assert.Equal("jordan@example.com", result.ApplicantInformation.Email);
         Assert.Equal("123 Main Street", result.ApplicantInformation.CurrentAddress);
     }
@@ -75,7 +75,7 @@ public class RentalApplicationViewModelFactoryTests
             {
                 Address = "123 Previous Street",
                 LandlordName = "Alex Morgan",
-                LandlordPhoneNumber = "555-0101",
+                LandlordPhoneNumber = "(555) 555-0101",
                 MoveInDate = moveInDate,
                 MoveOutDate = previousMoveOutDate
             },
@@ -83,7 +83,7 @@ public class RentalApplicationViewModelFactoryTests
             {
                 Address = "456 Current Avenue",
                 LandlordName = "Sam Lee",
-                LandlordPhoneNumber = "555-0102",
+                LandlordPhoneNumber = "(555) 555-0102",
                 MoveInDate = new DateTime(2024, 7, 1),
                 MoveOutDate = null
             }
@@ -102,7 +102,7 @@ public class RentalApplicationViewModelFactoryTests
 
         Assert.Equal("123 Previous Street", result.ResidenceHistory[0].Address);
         Assert.Equal("Alex Morgan", result.ResidenceHistory[0].LandlordName);
-        Assert.Equal("555-0101", result.ResidenceHistory[0].LandlordPhoneNumber);
+        Assert.Equal("(555) 555-0101", result.ResidenceHistory[0].LandlordPhoneNumber);
         Assert.Equal(moveInDate, result.ResidenceHistory[0].MoveInDate);
         Assert.Equal(previousMoveOutDate, result.ResidenceHistory[0].MoveOutDate);
 

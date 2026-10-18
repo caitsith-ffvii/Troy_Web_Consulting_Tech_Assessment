@@ -38,7 +38,7 @@ else
 
     <div class="mb-3">
         <label asp-for="ApplicantInformation.PhoneNumber" class="form-label"></label>
-        <input asp-for="ApplicantInformation.PhoneNumber" class="form-control" />
+        <input asp-for="ApplicantInformation.PhoneNumber" class="form-control" type="tel" data-phone placeholder="(555) 444-2912" />
         <span asp-validation-for="ApplicantInformation.PhoneNumber" class="text-danger"></span>
     </div>
 

@@ -161,12 +161,49 @@ public class RegistrationServiceTests
                 Roles.Applicant,
                 " ",
                 "Applicant",
-                "555-0100",
+                "(555) 555-0100",
                 "100 Main Street"));
 
         // Assert
         Assert.False(result.Succeeded);
         Assert.Contains(result.Errors, e => e.Field == "FirstName");
+        Assert.False(await context.Users.AnyAsync(u => u.Email == email));
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ApplicantPhone_IsStoredInStandardFormat()
+    {
+        // Arrange
+        var (context, service, userManager) = await CreateAsync();
+        var email = UniqueEmail();
+
+        // Act
+        var result = await service.RegisterAsync(
+            ApplicantRequest(email) with { PhoneNumber = "555.444.2912" });
+
+        // Assert
+        Assert.True(result.Succeeded);
+
+        var user = await userManager.FindByEmailAsync(email);
+        var applicant = await context.Applicants.SingleAsync(a => a.UserId == user!.Id);
+
+        Assert.Equal("(555) 444-2912", applicant.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ApplicantPhoneNotTenDigits_RejectsWithoutCreatingUser()
+    {
+        // Arrange
+        var (context, service, _) = await CreateAsync();
+        var email = UniqueEmail();
+
+        // Act
+        var result = await service.RegisterAsync(
+            ApplicantRequest(email) with { PhoneNumber = "555-0100" });
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Errors, e => e.Field == "PhoneNumber");
         Assert.False(await context.Users.AnyAsync(u => u.Email == email));
     }
 
@@ -237,6 +274,6 @@ public class RegistrationServiceTests
             Roles.Applicant,
             "Jane",
             "Applicant",
-            "555-0100",
+            "(555) 555-0100",
             "100 Main Street");
 }

@@ -53,6 +53,7 @@ Use it as a reference when implementation decisions arise. Update it when a mean
 - Each provided residence entry requires an address, landlord name, landlord phone, and move-in date.
 - Move-out date is optional, cannot precede move-in, and move-in cannot be in the future.
 - Applicant Information requires name, phone, email, and current address. Phone and email receive format validation.
+- Phone numbers (applicant and landlord) must be 10-digit US numbers. Input may use any punctuation, and a leading country code 1 is accepted. Inputs format as `(555) 444-2912` while typing. Services normalize to that format before saving, so stored data is consistent even without JavaScript.
 - The application uses one page with three sections: Applicant Information, Residence History, and Summary.
 - Each section has its own section view model and partial or view component.
 - Continue validates and saves the current section before advancing.

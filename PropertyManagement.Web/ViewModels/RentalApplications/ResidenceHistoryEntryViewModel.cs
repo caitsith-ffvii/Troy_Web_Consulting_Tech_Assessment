@@ -1,5 +1,6 @@
 
 using System.ComponentModel.DataAnnotations;
+using PropertyManagement.Web.Services;
 
 namespace PropertyManagement.Web.ViewModels.RentalApplications;
 
@@ -17,7 +18,7 @@ public class ResidenceHistoryEntryViewModel : IValidatableObject
     public string LandlordName { get; set; } = string.Empty;
 
     [Required]
-    [Phone]
+    [RegularExpression(PhoneNumberFormat.Pattern, ErrorMessage = PhoneNumberFormat.ErrorMessage)]
     [StringLength(30)]
     [Display(Name = "Landlord phone")]
     public string LandlordPhoneNumber { get; set; } = string.Empty;

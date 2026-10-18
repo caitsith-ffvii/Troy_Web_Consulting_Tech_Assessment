@@ -184,6 +184,14 @@ public class RentalApplicationService(ApplicationDbContext context)
                 "All applicant information fields are required.");
         }
 
+        var phoneNumber = PhoneNumberFormat.Normalize(information.PhoneNumber);
+
+        if (phoneNumber is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                PhoneNumberFormat.ErrorMessage);
+        }
+
         var application = result.Application!;
 
         await context.Entry(application)
@@ -192,7 +200,7 @@ public class RentalApplicationService(ApplicationDbContext context)
 
         application.ApplicantInformation.FirstName = information.FirstName;
         application.ApplicantInformation.LastName = information.LastName;
-        application.ApplicantInformation.PhoneNumber = information.PhoneNumber;
+        application.ApplicantInformation.PhoneNumber = phoneNumber;
         application.ApplicantInformation.Email = information.Email;
         application.ApplicantInformation.CurrentAddress = information.CurrentAddress;
         application.ApplicantInformationCompleted = true;
@@ -230,13 +238,21 @@ public class RentalApplicationService(ApplicationDbContext context)
             return ChangeApplicationStatusResult.Failure(dateError);
         }
 
+        var landlordPhoneNumber = PhoneNumberFormat.Normalize(entry.LandlordPhoneNumber);
+
+        if (landlordPhoneNumber is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                PhoneNumberFormat.ErrorMessage);
+        }
+
         var application = result.Application!;
 
         application.ResidenceHistory.Add(new ResidenceHistoryEntry
         {
             Address = entry.Address,
             LandlordName = entry.LandlordName,
-            LandlordPhoneNumber = entry.LandlordPhoneNumber,
+            LandlordPhoneNumber = landlordPhoneNumber,
             MoveInDate = entry.MoveInDate,
             MoveOutDate = entry.MoveOutDate
         });
@@ -288,9 +304,17 @@ public class RentalApplicationService(ApplicationDbContext context)
             return ChangeApplicationStatusResult.Failure(dateError);
         }
 
+        var landlordPhoneNumber = PhoneNumberFormat.Normalize(updatedEntry.LandlordPhoneNumber);
+
+        if (landlordPhoneNumber is null)
+        {
+            return ChangeApplicationStatusResult.Failure(
+                PhoneNumberFormat.ErrorMessage);
+        }
+
         entry.Address = updatedEntry.Address;
         entry.LandlordName = updatedEntry.LandlordName;
-        entry.LandlordPhoneNumber = updatedEntry.LandlordPhoneNumber;
+        entry.LandlordPhoneNumber = landlordPhoneNumber;
         entry.MoveInDate = updatedEntry.MoveInDate;
         entry.MoveOutDate = updatedEntry.MoveOutDate;
 

@@ -567,7 +567,7 @@ public class RentalApplicationServiceTests
                 User = secondApplicantUser,
                 FirstName = "Second",
                 LastName = "Applicant",
-                PhoneNumber = "555-0101",
+                PhoneNumber = "(555) 555-0101",
                 CurrentAddress = "300 Applicant Street"
             };
 
@@ -1430,7 +1430,7 @@ public class RentalApplicationServiceTests
             {
                 FirstName = "Updated",
                 LastName = "Applicant",
-                PhoneNumber = "555-0100",
+                PhoneNumber = "(555) 555-0100",
                 Email = "updated@example.com",
                 CurrentAddress = "123 New Street"
             });
@@ -1446,9 +1446,108 @@ public class RentalApplicationServiceTests
         Assert.True(savedApplication.ApplicantInformationCompleted);
         Assert.Equal("Updated", savedApplication.ApplicantInformation.FirstName);
         Assert.Equal("Applicant", savedApplication.ApplicantInformation.LastName);
-        Assert.Equal("555-0100", savedApplication.ApplicantInformation.PhoneNumber);
+        Assert.Equal("(555) 555-0100", savedApplication.ApplicantInformation.PhoneNumber);
         Assert.Equal("updated@example.com", savedApplication.ApplicantInformation.Email);
         Assert.Equal("123 New Street", savedApplication.ApplicantInformation.CurrentAddress);
+    }
+
+    [Theory]
+    [InlineData("555.444.2912", true)]
+    [InlineData("555-0100", false)]
+    public async Task SaveApplicantInformationAsync_PhoneNumber_IsNormalizedOrRejected(
+        string phoneNumber,
+        bool expectSaved)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.SaveApplicantInformationAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            new ApplicantInformationSnapshot
+            {
+                FirstName = "Test",
+                LastName = "Applicant",
+                PhoneNumber = phoneNumber,
+                Email = "test@example.com",
+                CurrentAddress = "1 Test Street"
+            });
+
+        // Assert
+        Assert.Equal(expectSaved, result.Succeeded);
+
+        context.ChangeTracker.Clear();
+
+        var saved = await context.RentalApplications
+            .Include(a => a.ApplicantInformation)
+            .SingleAsync(a => a.Id == scenario.Application.Id);
+
+        Assert.Equal(
+            expectSaved ? "(555) 444-2912" : "(555) 555-0100",
+            saved.ApplicantInformation.PhoneNumber);
+    }
+
+    [Theory]
+    [InlineData("5554442912", true)]
+    [InlineData("12345", false)]
+    public async Task AddResidenceHistoryAsync_LandlordPhone_IsNormalizedOrRejected(
+        string phoneNumber,
+        bool expectSaved)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        scenario.Application.Status = RentalApplicationStatus.Draft;
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.AddResidenceHistoryAsync(
+            scenario.Application.Id,
+            scenario.ApplicantUser.Id,
+            new ResidenceHistoryEntry
+            {
+                Address = "1 Previous Street",
+                LandlordName = "Pat Landlord",
+                LandlordPhoneNumber = phoneNumber,
+                MoveInDate = DateTime.Today.AddYears(-2),
+                MoveOutDate = DateTime.Today.AddYears(-1)
+            });
+
+        // Assert
+        Assert.Equal(expectSaved, result.Succeeded);
+
+        var entries = await context.ResidenceHistoryEntries
+            .Where(e => e.RentalApplicationId == scenario.Application.Id)
+            .ToListAsync();
+
+        if (expectSaved)
+        {
+            Assert.Equal("(555) 444-2912", Assert.Single(entries).LandlordPhoneNumber);
+        }
+        else
+        {
+            Assert.Empty(entries);
+        }
     }
 
     [Fact]
@@ -1477,7 +1576,7 @@ public class RentalApplicationServiceTests
             {
                 FirstName = "Unauthorized",
                 LastName = "Change",
-                PhoneNumber = "555-0199",
+                PhoneNumber = "(555) 555-0199",
                 Email = "unauthorized@example.com",
                 CurrentAddress = "999 Unknown Street"
             });
@@ -1511,7 +1610,7 @@ public class RentalApplicationServiceTests
             {
                 FirstName = "Too Late",
                 LastName = "Change",
-                PhoneNumber = "555-0199",
+                PhoneNumber = "(555) 555-0199",
                 Email = "late@example.com",
                 CurrentAddress = "999 Unknown Street"
             });
@@ -1543,7 +1642,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Previous Street",
             LandlordName = "Jordan Landlord",
-            LandlordPhoneNumber = "555-0123",
+            LandlordPhoneNumber = "(555) 555-0123",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1560,7 +1659,7 @@ public class RentalApplicationServiceTests
 
         Assert.Equal("123 Previous Street", savedEntry.Address);
         Assert.Equal("Jordan Landlord", savedEntry.LandlordName);
-        Assert.Equal("555-0123", savedEntry.LandlordPhoneNumber);
+        Assert.Equal("(555) 555-0123", savedEntry.LandlordPhoneNumber);
 
         context.ChangeTracker.Clear();
 
@@ -1593,7 +1692,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Unauthorized Street",
                 LandlordName = "Unauthorized Landlord",
-                LandlordPhoneNumber = "555-0199",
+                LandlordPhoneNumber = "(555) 555-0199",
                 MoveInDate = new DateTime(2022, 1, 1),
                 MoveOutDate = new DateTime(2024, 1, 1)
             });
@@ -1625,7 +1724,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Too Late Street",
                 LandlordName = "Landlord",
-                LandlordPhoneNumber = "555-0199",
+                LandlordPhoneNumber = "(555) 555-0199",
                 MoveInDate = new DateTime(2022, 1, 1),
                 MoveOutDate = new DateTime(2024, 1, 1)
             });
@@ -1660,7 +1759,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Future Street",
                 LandlordName = "Future Landlord",
-                LandlordPhoneNumber = "555-0123",
+                LandlordPhoneNumber = "(555) 555-0123",
                 MoveInDate = DateTime.Today.AddDays(1),
                 MoveOutDate = null
             });
@@ -1695,7 +1794,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Invalid Dates Street",
                 LandlordName = "Landlord",
-                LandlordPhoneNumber = "555-0123",
+                LandlordPhoneNumber = "(555) 555-0123",
                 MoveInDate = new DateTime(2024, 1, 1),
                 MoveOutDate = new DateTime(2023, 1, 1)
             });
@@ -1724,7 +1823,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1742,7 +1841,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Future Street",
                 LandlordName = "Future Landlord",
-                LandlordPhoneNumber = "555-0123",
+                LandlordPhoneNumber = "(555) 555-0123",
                 MoveInDate = DateTime.Today.AddDays(1),
                 MoveOutDate = null
             });
@@ -1776,7 +1875,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1794,7 +1893,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "123 Invalid Dates Street",
                 LandlordName = "Landlord",
-                LandlordPhoneNumber = "555-0123",
+                LandlordPhoneNumber = "(555) 555-0123",
                 MoveInDate = new DateTime(2024, 1, 1),
                 MoveOutDate = new DateTime(2023, 1, 1)
             });
@@ -1829,7 +1928,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Old Street",
             LandlordName = "Old Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1847,7 +1946,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "456 New Street",
                 LandlordName = "New Landlord",
-                LandlordPhoneNumber = "555-0123",
+                LandlordPhoneNumber = "(555) 555-0123",
                 MoveInDate = new DateTime(2023, 1, 1),
                 MoveOutDate = new DateTime(2025, 1, 1)
             });
@@ -1859,7 +1958,7 @@ public class RentalApplicationServiceTests
 
         Assert.Equal("456 New Street", savedEntry.Address);
         Assert.Equal("New Landlord", savedEntry.LandlordName);
-        Assert.Equal("555-0123", savedEntry.LandlordPhoneNumber);
+        Assert.Equal("(555) 555-0123", savedEntry.LandlordPhoneNumber);
         Assert.Equal(new DateTime(2023, 1, 1), savedEntry.MoveInDate);
         Assert.Equal(new DateTime(2025, 1, 1), savedEntry.MoveOutDate);
 
@@ -1888,7 +1987,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1906,7 +2005,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "Unauthorized Street",
                 LandlordName = "Unauthorized Landlord",
-                LandlordPhoneNumber = "555-0199",
+                LandlordPhoneNumber = "(555) 555-0199",
                 MoveInDate = new DateTime(2023, 1, 1),
                 MoveOutDate = new DateTime(2025, 1, 1)
             });
@@ -1934,7 +2033,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -1952,7 +2051,7 @@ public class RentalApplicationServiceTests
             {
                 Address = "Too Late Street",
                 LandlordName = "Different Landlord",
-                LandlordPhoneNumber = "555-0199",
+                LandlordPhoneNumber = "(555) 555-0199",
                 MoveInDate = new DateTime(2023, 1, 1),
                 MoveOutDate = new DateTime(2025, 1, 1)
             });
@@ -1992,7 +2091,7 @@ public class RentalApplicationServiceTests
             {
                 FirstName = "",
                 LastName = "Applicant",
-                PhoneNumber = "555-0100",
+                PhoneNumber = "(555) 555-0100",
                 Email = "updated@example.com",
                 CurrentAddress = "123 New Street"
             });
@@ -2030,7 +2129,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Old Street",
             LandlordName = "Old Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -2076,7 +2175,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -2114,7 +2213,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Original Street",
             LandlordName = "Original Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2022, 1, 1),
             MoveOutDate = new DateTime(2024, 1, 1)
         };
@@ -2282,7 +2381,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Example Street",
             LandlordName = "Example Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = new DateTime(2024, 1, 1),
             MoveOutDate = new DateTime(2023, 1, 1)
         });
@@ -2315,7 +2414,7 @@ public class RentalApplicationServiceTests
         {
             Address = "123 Future Street",
             LandlordName = "Future Landlord",
-            LandlordPhoneNumber = "555-0123",
+            LandlordPhoneNumber = "(555) 555-0123",
             MoveInDate = DateTime.Today.AddDays(1),
             MoveOutDate = null
         });

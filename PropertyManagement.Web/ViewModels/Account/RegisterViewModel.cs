@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using PropertyManagement.Web.Services;
 using PropertyManagement.Domain.Identity;
 
 namespace PropertyManagement.Web.ViewModels.Account;
@@ -31,7 +32,7 @@ public class RegisterViewModel : IValidatableObject
     [Display(Name = "Last name")]
     public string? LastName { get; set; }
 
-    [Phone]
+    [RegularExpression(PhoneNumberFormat.Pattern, ErrorMessage = PhoneNumberFormat.ErrorMessage)]
     [StringLength(30)]
     [Display(Name = "Phone")]
     public string? PhoneNumber { get; set; }

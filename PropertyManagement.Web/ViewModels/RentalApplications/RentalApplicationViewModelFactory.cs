@@ -1,4 +1,5 @@
 using PropertyManagement.Domain.Entities;
+using PropertyManagement.Web.Services;
 
 namespace PropertyManagement.Web.ViewModels.RentalApplications;
 
@@ -35,7 +36,8 @@ public class RentalApplicationViewModelFactory
             {
                 FirstName = application.ApplicantInformation.FirstName,
                 LastName = application.ApplicantInformation.LastName,
-                PhoneNumber = application.ApplicantInformation.PhoneNumber,
+                // Older data may predate formatting; show it in the standard form.
+                PhoneNumber = PhoneNumberFormat.Display(application.ApplicantInformation.PhoneNumber),
                 Email = application.ApplicantInformation.Email,
                 CurrentAddress = application.ApplicantInformation.CurrentAddress
             },
@@ -46,7 +48,7 @@ public class RentalApplicationViewModelFactory
                     Id = entry.Id,
                     Address = entry.Address,
                     LandlordName = entry.LandlordName,
-                    LandlordPhoneNumber = entry.LandlordPhoneNumber,
+                    LandlordPhoneNumber = PhoneNumberFormat.Display(entry.LandlordPhoneNumber),
                     MoveInDate = entry.MoveInDate,
                     MoveOutDate = entry.MoveOutDate
                 }).ToList()

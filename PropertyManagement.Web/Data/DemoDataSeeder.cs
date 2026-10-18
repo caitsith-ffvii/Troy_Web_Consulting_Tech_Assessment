@@ -109,7 +109,7 @@ public class DemoDataSeeder(
                 Roles.Applicant,
                 faker.Name.FirstName(),
                 faker.Name.LastName(),
-                faker.Phone.PhoneNumber("###-###-####"),
+                faker.Phone.PhoneNumber("(###) ###-####"),
                 faker.Address.FullAddress()));
         }
     }
@@ -361,7 +361,7 @@ public class DemoDataSeeder(
             {
                 Address = faker.Address.FullAddress(),
                 LandlordName = faker.Name.FullName(),
-                LandlordPhoneNumber = faker.Phone.PhoneNumber("###-###-####"),
+                LandlordPhoneNumber = faker.Phone.PhoneNumber("(###) ###-####"),
                 MoveInDate = moveIn,
                 MoveOutDate = moveOut
             });

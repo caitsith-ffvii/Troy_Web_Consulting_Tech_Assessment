@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using PropertyManagement.Web.Services;
 
 namespace PropertyManagement.Web.ViewModels.RentalApplications;
 
@@ -13,7 +14,7 @@ public class ApplicantInformationViewModel
     public string LastName { get; set; } = string.Empty;
 
     [Required]
-    [Phone]
+    [RegularExpression(PhoneNumberFormat.Pattern, ErrorMessage = PhoneNumberFormat.ErrorMessage)]
     [StringLength(30)]
     public string PhoneNumber { get; set; } = string.Empty;
 

@@ -48,7 +48,7 @@ public class ResidenceHistoryEntryViewModelTests
         {
             Address = "1 Previous Street",
             LandlordName = "Pat Landlord",
-            LandlordPhoneNumber = "555-0100",
+            LandlordPhoneNumber = "(555) 555-0100",
             MoveInDate = DateTime.Today.AddYears(-2),
             MoveOutDate = DateTime.Today.AddYears(-1)
         };

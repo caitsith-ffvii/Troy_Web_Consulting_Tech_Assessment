@@ -61,6 +61,7 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Draft application creation.
 - [x] Applicant information snapshot stored with the application.
 - [x] Applicant information persistence.
+- [x] Phone numbers must have 10 digits and are stored and shown as `(555) 444-2912`, formatted while typing and normalized by services. Evidence: `PhoneNumberFormatTests`, phone service and registration tests.
 - [x] Applicant information completion tracking.
 - [x] Residence history completion tracking.
 - [x] Application ownership checks in service operations.
@@ -181,7 +182,7 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 168/168 passing (2026-10-18).
+- [x] Full suite: 189/189 passing (2026-10-18).
 - [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
 - [x] Clean build from the solution root with no warnings.
 - [?] Verify no unintended tracked or untracked changes remain.

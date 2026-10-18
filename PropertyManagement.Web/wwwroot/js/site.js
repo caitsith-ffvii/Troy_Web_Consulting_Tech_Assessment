@@ -1,4 +1,29 @@
-﻿// Modal forms.
+﻿// Phone inputs marked data-phone format as (555) 444-2912 while typing.
+// The server normalizes again on save, so this is only a convenience.
+document.addEventListener('input', event => {
+    const input = event.target;
+
+    if (!(input instanceof HTMLInputElement) || !input.hasAttribute('data-phone')) {
+        return;
+    }
+
+    let digits = input.value.replace(/\D/g, '');
+
+    // A pasted number with a leading country code.
+    if (digits.length === 11 && digits.startsWith('1')) {
+        digits = digits.slice(1);
+    }
+
+    digits = digits.slice(0, 10);
+
+    input.value =
+        digits.length > 6 ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+        : digits.length > 3 ? `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+        : digits.length > 0 ? `(${digits}`
+        : '';
+});
+
+// Modal forms.
 //
 // An element with data-modal-url opens the shared #app-modal and loads the
 // partial view returned by that URL. Forms inside the modal post via fetch:

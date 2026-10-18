@@ -100,7 +100,7 @@ public static class PropertyTestData
                 User = NewUser($"tenant-{suffix}"),
                 FirstName = "Test",
                 LastName = "Tenant",
-                PhoneNumber = "555-0100",
+                PhoneNumber = "(555) 555-0100",
                 CurrentAddress = "5 Tenant Street"
             },
             StartDate = DateTime.UtcNow.Date.AddYears(-2),

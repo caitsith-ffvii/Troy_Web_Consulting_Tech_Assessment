@@ -183,7 +183,7 @@ public class DemoDataSeeder(
                 Unit = unit,
                 ApplicantId = applicant.Id,
                 StartDate = today.AddDays(-30 - i),
-                EndDate = today.AddDays(-30 - i).AddMonths(12),
+                EndDate = today.AddDays(-30 - i).AddMonths(12).AddDays(-1),
                 AgreedRent = unit.MonthlyRent
             });
         }

@@ -11,12 +11,12 @@ Use it as a reference when implementation decisions arise. Update it when a mean
 ### Architecture and Organization
 
 - Use .NET 10, ASP.NET Core MVC, Razor, EF Core, SQL Server, and ASP.NET Core Identity.
-- Use feature-based organization for controllers and services.
+- Use conventional MVC organization: controllers in `Controllers/`, services in `Services/`.
 - Use conventional MVC view locations under `Views/`.
 - Keep domain entities together under `Domain/Entities/`.
 - Use Fluent API configuration classes as the primary EF Core mapping approach.
 - Register entity configurations through `ApplyConfigurationsFromAssembly(...)`.
-- Use service interfaces where they establish useful contracts and support testing.
+- Register concrete service classes; services are tested against a real SQL Server database, so interfaces would add no current value.
 - Keep the architecture small; avoid abstractions that do not solve a current requirement.
 
 ### Layer Responsibilities
@@ -188,24 +188,24 @@ A rejected transition does not create a successful status-history record. Separa
 
 These are the current implementation directions:
 
-- One service per major domain area: Property, Unit, and Application.
-- Application approval and lease creation initially coordinated by `ApplicationService`.
+- One service per major domain area: `PropertyService`, `UnitService`, `RentalApplicationService`, plus `ApplicationListService` and `RegistrationService`.
+- Application approval and lease creation are coordinated by `RentalApplicationService`.
 - Controllers map service-returned entities into view models.
-- Reusable paginated result type for list queries.
+- Reusable `PagedResult<T>` for list queries.
 - Fluent API configurations registered through `ApplyConfigurationsFromAssembly(...)`.
-- Refresh only the relevant list after successful modal operations where practical.
-- Use a dedicated registration workflow that coordinates Identity account and domain-profile creation atomically.
+- Modal operations refresh only the affected list; status changes reload the page.
+- A dedicated registration workflow coordinates Identity account and domain-profile creation atomically. Registering again with an existing email and that account's password adds the other role.
 
-## Open Implementation Questions
+## Implementation Decisions
 
-These are implementation details, not reasons to delay beginning the project:
-
-1. **Exact supported sort fields:** Finalize the list when implementing the UI. Likely fields include submission date, applicant name, property, and status.
-2. **Active-lease database safeguard:** Choose the concrete SQL Server mechanism that prevents conflicting active leases while allowing historical leases.
-3. **Known persistence failures:** Decide which specific database failures can safely be translated into expected operation results and which should propagate to centralized error handling.
-4. **View component placement and purpose:** Implement the required view component where it provides useful reusable UI behavior.
-5. **Concurrency handling:** Implement and test how approval, withdrawal, and other conflicting operations detect and report conflicts.
-6. **Exact schema constraints and delete behavior:** Finalize foreign-key rules, unique constraints, indexes, and any SQL Server-specific constraints while implementing EF Core configurations and migrations.
+1. **Sort fields:** submission date, applicant name, property, and status, in either direction, with application Id as the tie-breaker. Applications store `SubmittedAtUtc` (reset on resubmission) for the review queue.
+2. **Active-lease safeguard:** approval runs in a transaction that takes an update lock (`UPDLOCK, HOLDLOCK`) on the unit row before the overlapping-lease check. Leases have inclusive start and end dates; a 12-month lease ends the day before its anniversary.
+3. **Persistence failures:** optimistic-concurrency conflicts become a "changed by someone else; reload" result. Other database failures propagate to centralized error handling.
+4. **View components:** `UnitTypeSelect` (active types plus a unit's current inactive type) and `StatusHistory` (transitions with actor and comment).
+5. **Concurrency:** `RentalApplication.RowVersion` makes every conflicting application write (approve vs. withdraw, concurrent section saves) fail instead of overwriting.
+6. **Schema constraints and deletes:** restrict deletes on historical relationships; unique unit number per property; check constraints on lease dates, lease rent, unit rent, and bedrooms. Removing a property or unit deletes it when nothing references it and archives it otherwise.
+7. **Duplicate applications:** applying again for a unit with an open application resumes it.
+8. **Review comments:** applicants see the latest return or denial comment; managers see the full status history.
 
 ## Scope Principle
 

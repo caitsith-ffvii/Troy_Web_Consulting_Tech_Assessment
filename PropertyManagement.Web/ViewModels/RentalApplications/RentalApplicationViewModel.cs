@@ -19,4 +19,13 @@ public class RentalApplicationViewModel
     // The manager's comment explaining the current Returned or Denied status.
     public string? ReviewComment { get; set; }
     public DateTime? ReviewedAtUtc { get; set; }
+
+    // A read-only copy for rendering section partials inside the Summary,
+    // which is always read-only even while the application is editable.
+    public RentalApplicationViewModel AsReadOnly()
+    {
+        var copy = (RentalApplicationViewModel)MemberwiseClone();
+        copy.IsReadOnly = true;
+        return copy;
+    }
 }

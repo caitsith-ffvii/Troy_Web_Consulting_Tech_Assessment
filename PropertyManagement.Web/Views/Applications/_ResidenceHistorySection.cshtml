@@ -1,13 +1,28 @@
 @model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
 
-<h2>Residence History</h2>
+@* One partial for both modes; IsReadOnly is decided on the server. Partial
+   paths are absolute because manager pages render this partial too. *@
+<h2 class="h4">Residence History</h2>
 
-<p>
-    List your previous residences. This section is optional; you can continue with no entries.
-</p>
+@{
+    var list = new PropertyManagement.Web.ViewModels.RentalApplications.ResidenceHistoryListViewModel
+    {
+        ApplicationId = Model.ApplicationId,
+        IsReadOnly = Model.IsReadOnly,
+        Entries = Model.ResidenceHistory
+    };
+}
 
-@if (!Model.IsReadOnly)
+@if (Model.IsReadOnly)
 {
+    <partial name="~/Views/Applications/_ResidenceHistoryList.cshtml" model="list" />
+}
+else
+{
+    <p>
+        List your previous residences. This section is optional; you can continue with no entries.
+    </p>
+
     @* type="button" so it never submits the surrounding Continue/Back form. *@
     <button type="button"
             class="btn btn-outline-primary mb-3"
@@ -15,15 +30,9 @@
             data-refresh-target="#residence-history-list">
         Add residence
     </button>
-}
 
-<div id="residence-history-list"
-     data-refresh-url="@Url.Action("ResidenceHistory", "Applications", new { id = Model.ApplicationId })">
-    <partial name="_ResidenceHistoryList"
-             model="new PropertyManagement.Web.ViewModels.RentalApplications.ResidenceHistoryListViewModel
-             {
-                 ApplicationId = Model.ApplicationId,
-                 IsReadOnly = Model.IsReadOnly,
-                 Entries = Model.ResidenceHistory
-             }" />
-</div>
+    <div id="residence-history-list"
+         data-refresh-url="@Url.Action("ResidenceHistory", "Applications", new { id = Model.ApplicationId })">
+        <partial name="~/Views/Applications/_ResidenceHistoryList.cshtml" model="list" />
+    </div>
+}

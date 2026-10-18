@@ -1,8 +1,14 @@
 @model PropertyManagement.Web.ViewModels.RentalApplications.RentalApplicationViewModel
 
+@* The Summary is the two section partials rendered read-only. Paths are
+   absolute because the manager details page renders this partial too. *@
+@{
+    var readOnly = Model.AsReadOnly();
+}
+
 <h2>Application Summary</h2>
 
-<p>
+<p class="mb-1">
     Applicant Information:
     <strong>@(Model.ApplicantInformationCompleted ? "Complete" : "Incomplete")</strong>
 </p>
@@ -12,56 +18,6 @@
     <strong>@(Model.ResidenceHistoryCompleted ? "Complete" : "Incomplete")</strong>
 </p>
 
-<h3>Applicant Information</h3>
+<partial name="~/Views/Applications/_ApplicantInformationSection.cshtml" model="readOnly" />
 
-<dl class="row">
-    <dt class="col-sm-3">First Name</dt>
-    <dd class="col-sm-9">@Model.ApplicantInformation.FirstName</dd>
-
-    <dt class="col-sm-3">Last Name</dt>
-    <dd class="col-sm-9">@Model.ApplicantInformation.LastName</dd>
-
-    <dt class="col-sm-3">Phone</dt>
-    <dd class="col-sm-9">@Model.ApplicantInformation.PhoneNumber</dd>
-
-    <dt class="col-sm-3">Email</dt>
-    <dd class="col-sm-9">@Model.ApplicantInformation.Email</dd>
-
-    <dt class="col-sm-3">Current Address</dt>
-    <dd class="col-sm-9">@Model.ApplicantInformation.CurrentAddress</dd>
-</dl>
-
-<h3>Residence History</h3>
-
-@if (Model.ResidenceHistory.Count == 0)
-{
-    <p>No previous residences listed.</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Address</th>
-                <th>Landlord</th>
-                <th>Landlord Phone</th>
-                <th>Move In</th>
-                <th>Move Out</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var residence in Model.ResidenceHistory)
-            {
-                <tr>
-                    <td>@residence.Address</td>
-                    <td>@residence.LandlordName</td>
-                    <td>@residence.LandlordPhoneNumber</td>
-                    <td>@residence.MoveInDate.ToShortDateString()</td>
-                    <td>
-                        @(residence.MoveOutDate?.ToShortDateString() ?? "Current")
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<partial name="~/Views/Applications/_ResidenceHistorySection.cshtml" model="readOnly" />

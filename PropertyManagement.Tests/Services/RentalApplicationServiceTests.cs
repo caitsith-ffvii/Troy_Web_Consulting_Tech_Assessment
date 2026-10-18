@@ -410,8 +410,9 @@ public class RentalApplicationServiceTests
         Assert.Equal(scenario.Unit.Id, lease.UnitId);
         Assert.Equal(scenario.Unit.MonthlyRent, lease.AgreedRent);
         Assert.Equal(DateTime.UtcNow.Date, lease.StartDate.Date);
+        // Inclusive dates: an exact 12-month term ends the day before the anniversary.
         Assert.Equal(
-            lease.StartDate.Date.AddMonths(12),
+            lease.StartDate.Date.AddMonths(12).AddDays(-1),
             lease.EndDate.Date);
 
         var history = await context.ApplicationStatusHistories
@@ -425,6 +426,53 @@ public class RentalApplicationServiceTests
             RentalApplicationStatus.Approved,
             history.NewStatus);
         Assert.Equal(scenario.ManagerUser.Id, history.ChangedByUserId);
+    }
+
+    // A lease covering today (end date inclusive) blocks approval; one that
+    // ended yesterday does not.
+    [Theory]
+    [InlineData(-1, true)]
+    [InlineData(0, false)]
+    public async Task ChangeStatusAsync_ExistingLeaseEndBoundary_ApprovesOnlyAfterLeaseEnds(
+        int existingLeaseEndOffsetDays,
+        bool expectApproved)
+    {
+        // Arrange
+        var database = new SqlServerTestDatabase();
+        await database.InitializeAsync();
+
+        await using var context = database.CreateContext();
+
+        var scenario =
+            await SubmittedApplicationScenarioFactory.CreateAsync(context);
+
+        var today = DateTime.UtcNow.Date;
+
+        context.Leases.Add(new Lease
+        {
+            UnitId = scenario.Unit.Id,
+            ApplicantId = scenario.Applicant.Id,
+            StartDate = today.AddYears(-1),
+            EndDate = today.AddDays(existingLeaseEndOffsetDays),
+            AgreedRent = scenario.Unit.MonthlyRent
+        });
+
+        await context.SaveChangesAsync();
+
+        var service = new RentalApplicationService(context);
+
+        // Act
+        var result = await service.ChangeStatusAsync(
+            scenario.Application.Id,
+            scenario.ManagerUser.Id,
+            RentalApplicationStatus.Approved,
+            null);
+
+        // Assert
+        Assert.Equal(expectApproved, result.Succeeded);
+        Assert.Equal(
+            expectApproved ? 2 : 1,
+            await context.Leases.CountAsync(l => l.UnitId == scenario.Unit.Id));
     }
 
     [Fact]

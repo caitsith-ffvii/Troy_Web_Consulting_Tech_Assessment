@@ -10,6 +10,18 @@ public class LeaseConfiguration : IEntityTypeConfiguration<Lease>
     {
         builder.HasKey(l => l.Id);
 
+        // Backstops for service-level rules.
+        builder.ToTable(table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Leases_EndDate_NotBeforeStartDate",
+                "[EndDate] >= [StartDate]");
+
+            table.HasCheckConstraint(
+                "CK_Leases_AgreedRent_Positive",
+                "[AgreedRent] > 0");
+        });
+
         builder.Property(l => l.StartDate)
             .IsRequired();
 

@@ -188,6 +188,25 @@ public class RentalApplicationViewModelFactoryTests
         Assert.Null(result.ReviewComment);
     }
 
+    [Fact]
+    public void AsReadOnly_ReturnsReadOnlyCopyWithoutChangingOriginal()
+    {
+        // Arrange
+        var factory = new RentalApplicationViewModelFactory();
+        var editable = factory.Create(
+            CreateApplication(),
+            RentalApplicationSection.Summary,
+            isReadOnly: false);
+
+        // Act
+        var readOnly = editable.AsReadOnly();
+
+        // Assert
+        Assert.True(readOnly.IsReadOnly);
+        Assert.False(editable.IsReadOnly);
+        Assert.Same(editable.ApplicantInformation, readOnly.ApplicantInformation);
+    }
+
     private static ApplicationStatusHistory History(
         RentalApplicationStatus newStatus,
         string? comment,

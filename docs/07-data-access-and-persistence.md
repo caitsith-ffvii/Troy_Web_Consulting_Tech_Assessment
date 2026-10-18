@@ -13,7 +13,7 @@ This document establishes how the application accesses SQL Server, configures EF
 - Code-first EF Core migrations
 - ASP.NET Core Identity for users and roles
 
-Migrations live alongside the application `DbContext` in `Data/Migrations`. A separate migrations project is not required for this assessment.
+Migrations live in the Web project's `Migrations/` folder. A separate migrations project is not required for this assessment.
 
 ## DbContext
 

@@ -56,17 +56,16 @@ Services should not depend on MVC view models or the shape of a particular page.
 
 For example, saving the Applicant Information section should receive that section's data, the application identifier, and the authenticated user's context—not the entire page view model.
 
-## Service Interfaces
+## Services
 
-Use interfaces for services where they define a useful contract and support dependency injection and testing.
+Services are concrete classes registered with dependency injection:
 
-Examples:
+- `RentalApplicationService`: application sections, submission, withdrawal, review, approval, and lease creation.
+- `ApplicationListService`: filtered, sorted, paginated application lists.
+- `PropertyService` and `UnitService`: property and unit management and unit availability.
+- `RegistrationService`: account, role, and domain-profile creation.
 
-- `IPropertyService`
-- `IUnitService`
-- `IApplicationService`
-
-Create interfaces alongside their implementations rather than introducing abstractions without a clear purpose.
+Services are tested against a real SQL Server database rather than mocks, so interfaces would add abstraction without a current purpose. Introduce one if a second implementation or a mocking need appears.
 
 Do not introduce a generalized service-result hierarchy or additional coordinating services unless a real requirement justifies them.
 

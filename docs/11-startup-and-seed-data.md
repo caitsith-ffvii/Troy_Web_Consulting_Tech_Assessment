@@ -24,7 +24,7 @@ If migration or seeding fails, initialization should fail visibly rather than si
 
 Use EF Core code-first migrations.
 
-Migrations live in `Data/Migrations` alongside `ApplicationDbContext`. A separate migration project is unnecessary for this assessment.
+Migrations live in the Web project's `Migrations/` folder. A separate migration project is unnecessary for this assessment.
 
 ## Idempotent Seeding
 

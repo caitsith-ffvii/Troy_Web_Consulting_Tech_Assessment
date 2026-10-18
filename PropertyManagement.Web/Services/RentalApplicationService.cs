@@ -624,7 +624,11 @@ public class RentalApplicationService(ApplicationDbContext context)
             }
 
             var leaseStartDate = now.Date;
-            var leaseEndDate = leaseStartDate.AddMonths(LeaseTermMonths);
+            // Both dates are inclusive, so the term ends the day before the
+            // anniversary and a new lease can start on the anniversary.
+            var leaseEndDate = leaseStartDate
+                .AddMonths(LeaseTermMonths)
+                .AddDays(-1);
 
             var hasOverlappingLease = await context.Leases
                 .AnyAsync(l =>

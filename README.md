@@ -1,152 +1,61 @@
 # Troy Web Consulting — Technical Assessment
 
-## Overview
+A property management web application: property managers maintain properties and units and review rental applications; applicants browse available units, complete and submit applications, and receive a twelve-month lease when approved.
 
-This project is a property management web application developed as part of the Troy Web Consulting technical assessment.
-
-The application is built with ASP.NET Core MVC and Razor, Entity Framework Core, SQL Server, and ASP.NET Core Identity. It supports property and unit management, rental applications, application review workflows, and lease creation.
-
-The implementation emphasizes clear separation of responsibilities, server-side validation, maintainable code, data integrity, and automated testing.
-
-## Technology Stack
-
-- **Framework:** ASP.NET Core MVC (.NET 10)
-- **Language:** C#
-- **UI:** Razor views, partial views, and view components
-- **Authentication and authorization:** ASP.NET Core Identity
-- **Database:** SQL Server / SQL Server Express
-- **Data access:** Entity Framework Core, code-first migrations
-- **Test framework:** xUnit
-- **Test data generation:** Bogus
-
-## Solution Structure
-
-```text
-PropertyManagement/
-├── PropertyManagement.sln
-├── PropertyManagement.Web/
-│   ├── Controllers/
-│   ├── Features/
-│   ├── ViewModels/
-│   ├── Views/
-│   ├── Data/
-│   ├── Identity/
-│   └── wwwroot/
-├── PropertyManagement.Domain/
-│   └── Entities/
-└── PropertyManagement.Tests/
-    ├── Domain/
-    ├── Services/
-    └── Integration/
-```
-
-### Project Responsibilities
-
-- **PropertyManagement.Web:** ASP.NET Core MVC application, controllers, services, view models, Identity integration, database access, and application startup.
-- **PropertyManagement.Domain:** Domain entities and business rules independent of MVC and database infrastructure.
-- **PropertyManagement.Tests:** Automated tests for domain behavior, service logic, and database-dependent behavior.
+Built with ASP.NET Core MVC and Razor (.NET 10), Entity Framework Core, SQL Server, and ASP.NET Core Identity. No SPA framework is used; modals are populated with partial views returned by controller actions.
 
 ## Prerequisites
 
-Install the following before running the application:
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server or SQL Server Express, reachable with Windows authentication (or adjust the connection strings below)
 
-- .NET 10 SDK
-- SQL Server or SQL Server Express
-- A compatible SQL Server client, such as SQL Server Management Studio (optional)
+## Getting started
 
-## Getting Started
-
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
-git clone <repository-url>
-cd PropertyManagement
+git clone https://github.com/caitsith-ffvii/Troy_Web_Consulting_Tech_Assessment.git
+cd Troy_Web_Consulting_Tech_Assessment
 ```
 
-Replace `<repository-url>` with the repository's clone URL.
+### 2. Configure the database connections
 
-### 2. Configure the database
+The application and the tests use separate databases on the same server:
 
-Update the connection string in `PropertyManagement.Web/appsettings.json` or the appropriate development configuration.
+| File | Database |
+|---|---|
+| `PropertyManagement.Web/appsettings.json` | `TroyPropertyManagement` |
+| `PropertyManagement.Tests/appsettings.Test.json` | `TroyPropertyManagement_Test` |
 
-Example:
+Both default to a local default instance with Windows authentication:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=PropertyManagementDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
-  }
-}
+```text
+Server=localhost;Database=...;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
-Adjust the server and authentication settings to match your local SQL Server installation.
+For SQL Server Express use `Server=localhost\SQLEXPRESS`; for LocalDB use `Server=(localdb)\MSSQLLocalDB`. Neither database needs to exist beforehand.
 
-### 3. Apply database migrations
-
-The application is intended to apply pending Entity Framework Core migrations during startup.
-
-If migrations need to be applied manually during development, run:
+### 3. Run the application
 
 ```bash
-dotnet ef database update \
-  --project PropertyManagement.Web \
-  --startup-project PropertyManagement.Web
-```
-
-If the EF Core CLI tool is not installed, install it using:
-
-```bash
-dotnet tool install --global dotnet-ef
-```
-
-### 4. Run the application
-
-From the solution directory:
-
-```bash
-dotnet restore
-dotnet build
 dotnet run --project PropertyManagement.Web
 ```
 
-Open the local URL printed in the terminal.
+On startup the application creates the database if needed, applies all EF Core migrations, and seeds lookup data, demo accounts, and sample data (see below). If migration or seeding fails, startup fails with the error rather than running against an incomplete database. No manual `dotnet ef` step is required.
 
-### 5. Run the tests
+Open the URL printed in the terminal.
 
-Run the automated test suite from the solution directory:
+### 4. Run the tests
 
 ```bash
-dotnet test
+dotnet test Troy_Web_Consulting_Assessment.slnx
 ```
 
-## Application Features
+The tests run against the real SQL Server test database (created and migrated automatically on first run) so that transactions, locking, and constraints are exercised as in production. Each test creates its own uniquely named data, so the database never needs resetting.
 
-The application is intended to support the following workflows:
+## Demo accounts and seed data
 
-- Applicant and property manager registration and authentication.
-- Property and unit management.
-- Active and inactive unit type management.
-- Browsing available units.
-- Multi-section rental applications with validation.
-- Residence history management.
-- Application submission, return, approval, denial, and withdrawal.
-- Application status history and manager review comments.
-- Lease creation during application approval.
-- Prevention of conflicting active leases.
-- Filtering, sorting, and pagination for application listings.
-
-## Seed Data and Demo Accounts
-
-On startup the application applies pending migrations and seeds the database. Seeding is idempotent: existing records, including demo account passwords, are never changed, and sample data is inserted only once.
-
-Seeded data includes:
-
-- Unit types: Apartment, Townhouse, Studio, and Loft (inactive, still shown on the unit that uses it).
-- 4 properties with 16 units; each property is assigned to one of the demo property managers.
-- 36 rental applications covering every status, with status history and review comments. There are more than 20 submitted applications, so the default review queue spans multiple pages.
-- Active leases on three units (making them unavailable) and one expired lease.
-
-### Demo accounts
+Seeding is idempotent: existing records, including demo account passwords, are never changed, and sample data is inserted only once.
 
 These credentials are for local review only.
 
@@ -156,24 +65,50 @@ These credentials are for local review only.
 | Property Manager | `manager2@demo.local` | `Demo123!` |
 | Applicant | `applicant1@demo.local` – `applicant5@demo.local` | `Demo123!` |
 
-`manager1` manages Maple Court and Riverside Commons; `manager2` manages Oak Hollow and Harbor View. All managers can view every property and application, but only the assigned manager can edit a property or review its applications.
+`manager1` manages Maple Court and Riverside Commons; `manager2` manages Oak Hollow and Harbor View. Every manager can view all properties and applications, but only the assigned manager can edit a property or review its applications.
 
-You can also register new accounts. Registering again with an existing email and that account's password adds the other role.
+Seeded data, generated with Bogus using a fixed seed:
 
-## Design Considerations
+- Unit types: Apartment, Townhouse, Studio, and Loft (inactive, still shown on the unit that uses it).
+- 4 properties with 16 units.
+- 36 rental applications covering every status, with status history and review comments. More than 20 are Submitted, so the default review queue spans two pages.
+- Active leases on three units (so they are unavailable) and one expired lease.
 
-The implementation follows these principles:
+You can also register new accounts and choose a role. Registering again with an existing email and that account's password adds the other role.
 
-- **Separation of responsibilities:** Controllers handle HTTP interactions, services coordinate business operations, and domain entities enforce domain-level rules.
-- **Server-side enforcement:** Authorization and business rules are enforced on the server rather than relying on UI restrictions.
-- **Data integrity:** Related database changes that must succeed or fail together are handled transactionally.
-- **Historical records:** Application status history and lease records are retained where needed.
-- **Testability:** Business behavior is tested independently where practical, with database integration tests for persistence-specific guarantees.
+To start over with fresh demo data, drop the `TroyPropertyManagement` database and restart the application.
 
-## Current Status
+## Features
 
-This README describes the intended project structure and functionality. Feature descriptions, setup instructions, demo credentials, and testing details will be verified and updated as implementation progresses.
+**Applicants**
 
-## License
+- Browse available units (not archived and without a lease covering today) and start an application; applying again for the same unit resumes the open application.
+- Complete the application on a single page, one section at a time: Applicant Information, Residence History (added, edited, and removed through modals), and a read-only Summary. Continue validates and saves the current section; Back returns without saving; Submit is available only from the Summary once both sections are saved.
+- See the manager's comment when an application is returned or denied, correct and resubmit returned applications, and withdraw open applications.
+- "My applications" list with filtering, sorting, and paging.
 
-Created for the Troy Web Consulting technical assessment. No separate license is specified.
+**Property managers**
+
+- Add, edit, and remove properties and units through modals. Removing deletes a record that nothing references and archives it otherwise, preserving its history. Inactive unit types stay on existing units but cannot be newly selected (enforced on the server).
+- Review queue of all applications: filtered by status and property, sorted, and paginated in the database. Defaults to Submitted, oldest submission first, 20 per page.
+- Application page with the full status history (who, when, and comment) and, for the assigned manager, a review modal to approve, return, or deny. Return and deny require a comment. Approval creates a twelve-month lease at the unit's rent.
+
+## Design highlights
+
+- **Layering.** Controllers handle HTTP and map entities to view models; services enforce business rules and authorization and return explicit result types for expected failures; `RentalApplication` owns its legal status transitions.
+- **Server-side enforcement.** Ownership, role, property assignment, editable status, and unit-type rules are checked by services against database state, never trusted from the browser or implied by hidden UI.
+- **Lease integrity.** Approval updates the application, creates the lease, and records history in one transaction, holding an update lock on the unit row so two concurrent approvals cannot create overlapping leases.
+- **Concurrency.** A row version on applications turns conflicting writes (for example, an applicant withdrawing while a manager approves) into a "changed by someone else; reload" message instead of a silent overwrite.
+- **Partials and view components.** Each application section and every modal is a partial view; `UnitTypeSelect` and `StatusHistory` are view components with their own data access.
+
+Design decisions are recorded in [`docs/`](docs/), starting with [`00-decisions-and-open-questions.md`](docs/00-decisions-and-open-questions.md).
+
+## Solution structure
+
+```text
+PropertyManagement.Domain/   Domain entities and role names
+PropertyManagement.Web/      MVC app: controllers, services, data access, migrations, views
+PropertyManagement.Tests/    xUnit tests: domain, view models, and SQL Server-backed services
+```
+
+See [`docs/12-project-structure-and-conventions.md`](docs/12-project-structure-and-conventions.md) for the detailed layout.

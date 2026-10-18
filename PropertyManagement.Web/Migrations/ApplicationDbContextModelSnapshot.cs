@@ -307,7 +307,12 @@ namespace PropertyManagement.Web.Migrations
 
                     b.HasIndex("UnitId");
 
-                    b.ToTable("Leases");
+                    b.ToTable("Leases", t =>
+                        {
+                            t.HasCheckConstraint("CK_Leases_AgreedRent_Positive", "[AgreedRent] > 0");
+
+                            t.HasCheckConstraint("CK_Leases_EndDate_NotBeforeStartDate", "[EndDate] >= [StartDate]");
+                        });
                 });
 
             modelBuilder.Entity("PropertyManagement.Domain.Entities.Property", b =>
@@ -485,7 +490,12 @@ namespace PropertyManagement.Web.Migrations
                     b.HasIndex("PropertyId", "UnitNumber")
                         .IsUnique();
 
-                    b.ToTable("Units");
+                    b.ToTable("Units", t =>
+                        {
+                            t.HasCheckConstraint("CK_Units_Bedrooms_Range", "[Bedrooms] BETWEEN 0 AND 20");
+
+                            t.HasCheckConstraint("CK_Units_MonthlyRent_Positive", "[MonthlyRent] > 0");
+                        });
                 });
 
             modelBuilder.Entity("PropertyManagement.Domain.Entities.UnitType", b =>

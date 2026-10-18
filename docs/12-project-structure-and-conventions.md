@@ -2,73 +2,57 @@
 
 ## Purpose
 
-This document defines the initial code organization and conventions for the assessment.
+This document defines the code organization and conventions for the assessment.
 
 The structure should make responsibilities easy to find without adding unnecessary projects or abstractions.
 
-## Proposed Project Structure
+## Project Structure
 
 ```text
-PropertyManagement/
-├── Controllers/                     # Optional conventional location
-├── Features/
-│   ├── Properties/
-│   │   ├── PropertiesController.cs
-│   │   ├── IPropertyService.cs
-│   │   └── PropertyService.cs
-│   ├── Units/
-│   │   ├── UnitsController.cs
-│   │   ├── IUnitService.cs
-│   │   └── UnitService.cs
-│   └── Applications/
-│       ├── ApplicationsController.cs
-│       ├── IApplicationService.cs
-│       └── ApplicationService.cs
-├── Domain/
-│   └── Entities/
-├── Data/
-│   ├── ApplicationDbContext.cs
-│   ├── DatabaseInitializer.cs
-│   ├── Configurations/
-│   └── Migrations/
-├── ViewModels/
-├── Views/
-│   ├── Properties/
-│   ├── Units/
-│   ├── Applications/
-│   └── Shared/
-├── wwwroot/
-└── Program.cs
+Troy_Web_Consulting_Assessment.slnx
+├── PropertyManagement.Domain/
+│   ├── Entities/                    # Domain entities, ApplicationUser
+│   └── Identity/                    # Role names
+├── PropertyManagement.Web/
+│   ├── Controllers/                 # MVC controllers
+│   ├── Services/                    # Business operations and their result types
+│   ├── Data/
+│   │   ├── ApplicationDbContext.cs
+│   │   ├── DatabaseInitializer.cs   # Migrations and role seeding at startup
+│   │   ├── DemoDataSeeder.cs        # Bogus demo data
+│   │   └── Configurations/          # Fluent API entity configurations
+│   ├── Migrations/                  # EF Core code-first migrations
+│   ├── ViewComponents/              # UnitTypeSelect, StatusHistory
+│   ├── ViewModels/                  # Per-feature view models
+│   ├── Views/                       # Conventional Razor view locations
+│   └── wwwroot/                     # Static assets, including the modal script
+└── PropertyManagement.Tests/
+    ├── Entities/                    # Domain unit tests
+    ├── Services/                    # SQL Server-backed service tests
+    ├── ViewModels/                  # View-model mapping and validation tests
+    └── Infrastructure/              # Test database and scenario helpers
 ```
 
-This is an initial organizational guide, not a requirement to create every folder immediately.
+## Organization
 
-## Feature Organization
+Controllers live in `Controllers/` and services in `Services/`, following conventional ASP.NET Core MVC layout. View models are grouped by feature under `ViewModels/` (for example `Account`, `Properties`, `RentalApplications`).
 
-Group controllers, service interfaces, and service implementations by major feature.
-
-Examples include Properties, Units, and Applications.
-
-This makes the code for a feature easier to locate without requiring a separate project for each feature.
-
-An additional Lease service should be introduced only if lease operations develop enough distinct responsibilities to justify it. Application approval and lease creation can initially be coordinated by `ApplicationService`.
+An additional Lease service should be introduced only if lease operations develop enough distinct responsibilities to justify it. Application approval and lease creation are coordinated by `RentalApplicationService`.
 
 ## Controllers and Views
 
-Controllers may live in feature folders. ASP.NET Core MVC does not require controllers to live in a folder named `Controllers`.
-
 Use conventional Razor view locations:
 
-- `Views/Properties/`
-- `Views/Units/`
-- `Views/Applications/`
-- `Views/Shared/`
+- `Views/Account/`
+- `Views/Properties/`, `Views/Units/`, `Views/AvailableUnits/`
+- `Views/Applications/` (applicant) and `Views/ManageApplications/` (property manager)
+- `Views/Shared/` for shared partials, including the modal shell and view-component views
 
-This keeps view discovery straightforward. Feature-local view folders would require additional view-location configuration and are unnecessary for this assessment.
+Modal actions return a partial view when the form must be re-rendered and `204 No Content` on success; `wwwroot/js/site.js` handles both.
 
 ## Domain Entities
 
-Keep domain entities together in `Domain/Entities/` initially.
+Keep domain entities together in `PropertyManagement.Domain/Entities/`.
 
 Do not introduce feature-specific entity subfolders until the project size makes them useful.
 
@@ -78,7 +62,7 @@ Entities represent application-domain concepts and should not depend on MVC view
 
 Keep database access infrastructure in `Data/`.
 
-Use Fluent API entity configuration classes in `Data/Configurations/`, with migrations in `Data/Migrations/`.
+Use Fluent API entity configuration classes in `Data/Configurations/`. Migrations live in the Web project's `Migrations/` folder.
 
 The database initializer belongs in the data infrastructure area because it coordinates schema initialization and seeding.
 
@@ -88,21 +72,13 @@ View models define the data needed by MVC views and form submissions.
 
 They are distinct from domain entities. Do not expose entities directly as form contracts simply because their fields happen to match.
 
-For rental applications, use a parent `RentalApplicationViewModel` with section-specific models for Applicant Information, Residence History, and Summary.
+For rental applications, a parent `RentalApplicationViewModel` holds section-specific models for Applicant Information, Residence History, and Summary.
 
-## Services and Interfaces
+## Services
 
-Use feature-specific service interfaces and implementations where they establish useful contracts and support dependency injection and testing.
-
-Examples:
-
-- `IPropertyService` / `PropertyService`
-- `IUnitService` / `UnitService`
-- `IApplicationService` / `ApplicationService`
+Services are concrete classes registered with dependency injection and tested against a real SQL Server database. Interfaces are not introduced until a second implementation or a mocking need justifies them.
 
 Prefer explicit operation names and readable result types over overly generic APIs.
-
-Avoid introducing abstractions before a real requirement emerges.
 
 ## Asynchronous Operations
 

@@ -25,8 +25,8 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Business rules enforced in services rather than relying exclusively on UI validation.
 - [x] Service results represent expected business failures.
 - [x] Async EF Core operations.
-- [?] Review dependency injection, entity configuration, and project boundaries.
-- [?] Confirm database migrations and clean-database setup work from documented instructions.
+- [x] Dependency injection, entity configuration, and project boundaries reviewed; docs 05/07/12 describe the built layout.
+- [x] Startup creates and migrates a fresh database and seeds it (manual fresh-database startup; README documents it).
 
 ## 2. Identity, profiles, and authorization
 
@@ -41,8 +41,8 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Applicant pages require the Applicant role. Evidence: manual check (manager receives Access Denied).
 - [x] Verify role and profile provisioning for newly registered users.
 - [x] Verify role and profile provisioning for seeded users. Evidence: manual login as `applicant1@demo.local`.
-- [?] Verify every applicant and manager endpoint enforces the correct authorization.
-- [?] Verify unauthorized access does not disclose another user's application data.
+- [x] Every controller requires its role (`Applicant` or `PropertyManager`); services enforce ownership and property assignment. Reviewed endpoint by endpoint.
+- [x] Another applicant's application returns 404, not 403. Evidence: `FindApplicantApplicationAsync_ApplicationBelongsToAnotherApplicant_ReturnsNull`.
 
 ## 3. Properties and units
 
@@ -86,8 +86,10 @@ Do not mark a requirement complete just because code exists. Record test evidenc
 - [x] Back navigation does not save posted changes.
 - [x] Submit is restricted to the Summary section.
 - [x] Read-only applications open on Summary.
-- [?] Verify all section-navigation edge cases and tampered POST requests.
-- [?] Verify the rendered UI and validation messages manually in a browser.
+- [x] Navigation validates the posted section, reads editability from the database, and allows Submit only from the Summary; services re-check every rule.
+- [x] UI and validation messages checked manually in each step.
+- [x] Section partials render editable or read-only from a server decision, and the Summary is composed of them in read-only mode. Evidence: `AsReadOnly_ReturnsReadOnlyCopyWithoutChangingOriginal`.
+- [?] Manual check of read-only section rendering on the Summary and manager details page.
 
 ## 6. Residence history
 
@@ -124,10 +126,10 @@ Progress:
 - [x] Status history records previous/new status, actor, timestamp, and comment.
 - [x] Approval and lease creation occur within one transaction.
 - [x] Manager property ownership is checked before status changes.
-- [?] Verify the complete transition matrix with tests.
+- [x] Complete transition matrix. Evidence: `CanTransitionTo_FullMatrix_AllowsOnlyDocumentedTransitions`.
 - [x] Applicants can withdraw Draft, Submitted, and Returned applications; terminal statuses are rejected. Evidence: `WithdrawAsync` tests.
 - [x] Managers are limited to Approve, Return, and Deny. Evidence: `ChangeStatusAsync_StatusIsNotReviewOutcome_RejectsWithoutChanges`.
-- [?] Verify invalid status values and malformed requests are rejected safely.
+- [x] Invalid status, section, and sort values are rejected or fall back to defaults; managers cannot set non-review statuses.
 
 ## 8. Lease creation and concurrency
 
@@ -138,8 +140,8 @@ Progress:
 - [x] Approval uses a SQL Server transaction and unit-row locking.
 - [x] Concurrent-approval test uses separate DbContext instances.
 - [x] `ChangeStatusAsync_TwoApplicationsApprovedConcurrently_CreatesOnlyOneLease` passed 10 consecutive runs.
-- [?] Verify lease date boundaries and any timezone/date assumptions.
-- [?] Verify the database has appropriate constraints to complement service-level checks.
+- [x] Lease dates are inclusive UTC calendar dates; a 12-month lease ends the day before its anniversary. Evidence: `ChangeStatusAsync_ExistingLeaseEndBoundary_ApprovesOnlyAfterLeaseEnds`.
+- [x] Database constraints: foreign keys with restricted deletes, unique unit number per property, check constraints on lease dates and rent, unit rent, and bedrooms.
 - [x] Optimistic concurrency protects every application write beyond the two-approval scenario.
 
 ## 9. Property manager workflows
@@ -179,20 +181,20 @@ Progress:
 - [x] Approval/lease creation test passes.
 - [x] Existing-lease approval rejection test passes.
 - [x] Concurrent approval test passes 10/10 runs.
-- [x] Full suite: 146/146 passing (2026-10-18).
-- [?] Review missing negative cases and authorization boundaries.
-- [?] Verify clean build from the solution root.
+- [x] Full suite: 149/149 passing (2026-10-18).
+- [x] Negative cases and authorization boundaries reviewed; unauthorized, wrong-status, archived, and concurrent cases are covered by tests.
+- [x] Clean build from the solution root with no warnings.
 - [?] Verify no unintended tracked or untracked changes remain.
-- [?] Manually smoke-test the main applicant and manager workflows.
+- [x] Main applicant and manager workflows smoke-tested manually.
 
 ## 12. Documentation and delivery
 
-- [?] README contains prerequisites and setup instructions.
-- [?] Document SQL Server configuration and database creation/migration.
+- [x] README contains prerequisites and setup instructions.
+- [x] SQL Server configuration and automatic database creation/migration documented.
 - [x] Document demo credentials without exposing production secrets.
-- [?] Document how to run the application and test suite.
+- [x] Running the application and test suite documented.
 - [?] Verify a fresh checkout can be configured and run using only the documentation.
-- [?] Final review against the original assessment prompt.
+- [x] Final review against the assessment; the read-only section partial gap was found and fixed.
 - [?] Final Git status and commit review.
 
 ---
@@ -213,11 +215,12 @@ Progress:
 - `dedc52d` — Add applicant unit browsing and resume open applications
 - `72a6e16` — Add residence history modals
 - `31d115a` — Add application lists and show review comments to applicants
-- Add manager review, status history, and applicant withdrawal
+- `c81419b` — Add manager review, status history, and applicant withdrawal
+- Harden leases and constraints, reuse section partials, and update docs
 
 **Latest verified evidence**
 
-- Full suite: 146/146 passing.
+- Full suite: 149/149 passing; clean build with no warnings.
 - Manual smoke test of the full workflow: review as assigned vs. unassigned manager, return with comment, applicant resubmits, withdraw, approve removes the unit from available units.
 - Manual check: manager queue paging/sorting/filtering, applicant list, return/denial banners.
 - Manual check: residence modals add/edit/remove, date validation in place, list refresh without reload, read-only applications show no residence actions.
@@ -229,7 +232,9 @@ Progress:
 
 **Still to confirm**
 
-- README and final review against the assessment.
+- Manual check of read-only section rendering (Summary and manager details page).
+- Fresh checkout configured and run using only the README.
+- Resolve the commit on `origin/main` that is not in the local branch, then push.
 
 ## Working protocol
 

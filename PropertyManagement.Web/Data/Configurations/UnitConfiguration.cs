@@ -11,6 +11,18 @@ public class UnitConfiguration : IEntityTypeConfiguration<Unit>
     {
         builder.HasKey(u => u.Id);
 
+        // Backstops for UnitService validation.
+        builder.ToTable(table =>
+        {
+            table.HasCheckConstraint(
+                "CK_Units_Bedrooms_Range",
+                "[Bedrooms] BETWEEN 0 AND 20");
+
+            table.HasCheckConstraint(
+                "CK_Units_MonthlyRent_Positive",
+                "[MonthlyRent] > 0");
+        });
+
         builder.Property(u => u.UnitNumber)
             .IsRequired()
             .HasMaxLength(50);
